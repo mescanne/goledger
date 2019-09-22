@@ -24,17 +24,15 @@ goledger import [flags]
 ### Options inherited from parent commands
 
 ```
-      --ccy string       Base Currency (default "£")
+      --ccy string       Base Currency
       --colour           Colour (ansi) for reports (default true)
       --divider string   Divider for account components for reports (default ":")
       --lang string      Language (default "en_GB.UTF-8")
-  -l, --ledger string    Ledger to read (default "/home/mescanne/docs/ledger/main.ledger")
+  -l, --ledger string    Ledger to read (default "main.ledger")
       --verbose          Verbose
 ```
 
 ### SEE ALSO
 
 * [goledger](goledger.md)	 - goledger text-based account application
-* [goledger import fdcurr](goledger_import_fdcurr.md)	 - FirstDirect Current Account
-* [goledger import format](goledger_import_format.md)	 - Import format syntax
 

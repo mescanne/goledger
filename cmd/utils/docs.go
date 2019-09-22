@@ -11,7 +11,7 @@ func AddDocs(root *cobra.Command) {
 	ncmd := &cobra.Command{
 		Use:               "docs",
 		Short:             "Generate manpages",
-		Long:              "Genearte manpages",
+		Long:              "Generate manpages",
 		DisableAutoGenTag: true,
 	}
 

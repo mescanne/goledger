@@ -88,9 +88,9 @@ func (imp *ImportDef) run(app *app.App, rcmd *cobra.Command, args []string) erro
 	return reports.ShowLedger(bp, b.Transactions())
 }
 
-func (imp *ImportDef) add(app *app.App) *cobra.Command {
+func (imp *ImportDef) add(name string, app *app.App) *cobra.Command {
 	ncmd := &cobra.Command{
-		Use:               imp.Name,
+		Use:               name,
 		Short:             imp.Description,
 		Long:              "Import transactions", // TODO: Fill this in automatically
 		Args:              cobra.MinimumNArgs(1),
@@ -117,18 +117,17 @@ func (imp *ImportDef) add(app *app.App) *cobra.Command {
 	return ncmd
 }
 
-func Add(root *cobra.Command, app *app.App, config []ImportDef) {
+func Add(root *cobra.Command, app *app.App, config map[string]ImportDef) {
 	dftl := &ImportDef{
-		Name:        "import",
 		Description: "Import transactions",
 		Dedup:       true,
 		Reclassify:  true,
 	}
-	ncmd := dftl.add(app)
+	ncmd := dftl.add("import", app)
 	root.AddCommand(ncmd)
 
-	for _, def := range config {
-		ncmd.AddCommand(def.add(app))
+	for name, def := range config {
+		ncmd.AddCommand(def.add(name, app))
 	}
 
 	root.AddCommand(&cobra.Command{
