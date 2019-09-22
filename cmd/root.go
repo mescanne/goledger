@@ -17,9 +17,9 @@ import (
 //
 type Config struct {
 	app.App
-	TransactionCmd reports.TransactionReport
-	RegisterCmd    register.RegisterReport
-	ImportDefs     []importer.ImportDef
+	Report     reports.TransactionReport
+	Register   register.RegisterReport
+	ImportDefs map[string]importer.ImportDef
 }
 
 //
@@ -48,8 +48,8 @@ func Execute() error {
 
 	// Add sub-commands
 	accounts.Add(appCmd, &app.App)
-	reports.Add(appCmd, &app.App, &app.TransactionCmd)
-	register.Add(appCmd, &app.App, &app.RegisterCmd)
+	reports.Add(appCmd, &app.App, &app.Report)
+	register.Add(appCmd, &app.App, &app.Register)
 	importer.Add(appCmd, &app.App, app.ImportDefs)
 	currencies.Add(appCmd, &app.App)
 	utils.AddShell(appCmd)

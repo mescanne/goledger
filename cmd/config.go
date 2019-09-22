@@ -16,7 +16,7 @@ func load(name string, app *Config) error {
 	writeDefault := false
 
 	nconfig, ok := os.LookupEnv(strings.ToUpper(name) + "_CONF")
-	if ok {
+	if ok && nconfig != "" {
 		files = append(files, nconfig)
 		writeDefault = true
 	} else {
@@ -99,46 +99,46 @@ const DEFAULT_CONFIG_FILE = `
 #
 # Main defaults
 #
-# ledger =  "default_ledger_file"
-# baseccy = "£"
+## Default ledger file
+#ledger =  "default_ledger_file"
+## Default base CCY (for reporting)
+#baseccy = "£"
 
 #
-# Defaults for the transaction command
+# Defaults for the report command
 #
-[transactioncmd]
+[report]
 # combineby = "today"
 # type =      "Ansi"
 # sum =       true
 # convert =   true
 # credit =    "^(Income|Trading|Liability|Equity)(:.*)?$"
+#
+#[transactioncmd.macros]
+#macroA = [
+#	"book operation A",
+#	"book operation B",
+#]
 
 #
 # Defaults for the register command
 #
-[registercmd]
-accounts = [
-  "Asset:<Default>",
-]
+[register]
+# accounts = [
+#   "Asset:<Default>",
+# ]
 # count = -100
 # asc = true
 
+# Repeated import definitions
+# for each custom-importer
 [[importdefs]]
-name = "fdcurr"
-description = "FirstDirect Current Account"
-configtype = "csv"
-account = "Asset:Joint:Current:FirstDirectCurrent"
-counteraccount = "Expense:Joint:Miscellaneous"
-dedup = true
-reclassify = true
-[importdefs.params]
-ccy = "£"
-date = "0"
-amount = "2"
-payee = "1"
-
-[macros]
-macroA = [
-	"book operation A",
-	"book operation B",
-]
+#name = "fdcurr"
+#description = "FirstDirect Current Account"
+#configtype = "csv"
+#account = "Asset:Joint:Current:FirstDirectCurrent"
+#counteraccount = "Expense:Joint:Miscellaneous"
+#dedup = true
+#reclassify = true
+#params = { ccy = "£", date = "0", amount = "2", payee = "1" }
 `

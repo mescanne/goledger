@@ -6,10 +6,13 @@ Note:
     https://github.com/google/re2/wiki/Syntax.
 
 Operations:
-  map=/search-regex/replace-regex/
+  map=/search-regex/replace-regex/(alternate-account/)?
 
     All accounts that match search-regex will have the replace-regex
     substituted. Captured groups can be replaced using $1, $2, etc.
+
+	The alternate account is used if, if specified and non-empty,
+	for the account to substitute if the search doesn't match.
 
     Example:
     map=/^Asset:[^:]*:(.*)$/Asset:$1/
@@ -49,8 +52,4 @@ Operations:
     This will include everything since the preceeding Jan 1st (including Jan 1st),
     up to the subsequent Jan 1st (excluding Jan 1st).
 
-
-### SEE ALSO
-
-* [goledger report](goledger_report.md)	 - Aggregated transaction reports
 

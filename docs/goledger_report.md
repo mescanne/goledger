@@ -41,30 +41,26 @@ goledger report [macros|ops...] [flags]
 ### Options
 
 ```
-      --asof string         End date
-      --begin string        Begin date
-      --convert             Convert to base currency (default true)
-      --credit string       Credit account regex (default "^(Income|Trading|Liability|Equity)(:.*)?$")
+      --convert             Convert to base currency
+      --credit string       Credit account regex
   -h, --help                help for report
-      --splitby floorType   Combine transactions by periodic date (values none, yearly, quarterly, monthly, today) (default today)
-      --sum                 Summarise transactions (default true)
-      --type reportType     Report type (Text, Ledger) (default Text)
+      --splitby floorType   Combine transactions by periodic date (values none, yearly, quarterly, monthly, today)
+      --sum                 Summarise transactions
+      --type reportType     Report type (Text, Ledger)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --ccy string       Base Currency (default "£")
+      --ccy string       Base Currency
       --colour           Colour (ansi) for reports (default true)
       --divider string   Divider for account components for reports (default ":")
       --lang string      Language (default "en_GB.UTF-8")
-  -l, --ledger string    Ledger to read (default "/home/mescanne/docs/ledger/main.ledger")
+  -l, --ledger string    Ledger to read (default "main.ledger")
       --verbose          Verbose
 ```
 
 ### SEE ALSO
 
 * [goledger](goledger.md)	 - goledger text-based account application
-* [goledger report macros](goledger_report_macros.md)	 - Preconfigured macros for operations
-* [goledger report ops](goledger_report_ops.md)	 - Operations on books
 

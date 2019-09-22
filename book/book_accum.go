@@ -6,10 +6,6 @@ import (
 	"strings"
 )
 
-//func (b *Book) MaxAccountTerm(paddingByLevel int) int {
-//	return Transaction(b.post).MaxAccountTerm(paddingByLevel)
-//}
-
 func findMaxCommonPrefix(left string, right string, divider string) string {
 	prefix := 0
 	i := 0
