@@ -13,23 +13,23 @@ goledger import [flags]
 ### Options
 
 ```
-  -a, --acct string               Account for imported postings
-  -c, --cacct string              Counteraccount for new transactions
-  -d, --dedup                     Deduplicate transactions based on payee and date (default true)
-      --format <type>:<k=v;...>   Format of input (see help format)
+  -a, --acct string               account for imported postings
+  -c, --cacct string              counteraccount for new transactions
+  -d, --dedup                     deduplicate transactions based on payee and date (default true)
+      --format <type>:<k=v,...>   format of input (see help format)
   -h, --help                      help for import
-  -r, --reclassify                Reclassify the counteraccount based on previous transactions (default true)
+  -r, --reclassify                reclassify the counteraccount based on previous transactions (default true)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --ccy string       Base Currency
-      --colour           Colour (ansi) for reports (default true)
-      --divider string   Divider for account components for reports (default ":")
-      --lang string      Language (default "en_GB.UTF-8")
-  -l, --ledger string    Ledger to read (default "main.ledger")
-      --verbose          Verbose
+      --ccy string       base currency
+      --colour           colour (ansi) for reports (default true)
+      --divider string   divider for account components for reports (default ":")
+      --lang string      language (default "en_GB.UTF-8")
+  -l, --ledger string    ledger to read (default "main.ledger")
+      --verbose          verbose
 ```
 
 ### SEE ALSO

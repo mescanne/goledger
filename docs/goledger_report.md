@@ -41,23 +41,23 @@ goledger report [macros|ops...] [flags]
 ### Options
 
 ```
-      --convert             Convert to base currency
-      --credit string       Credit account regex
+      --convert             convert to base currency
+      --credit string       credit account regex
   -h, --help                help for report
-      --splitby floorType   Combine transactions by periodic date (values none, yearly, quarterly, monthly, today)
-      --sum                 Summarise transactions
-      --type reportType     Report type (Text, Ledger)
+      --splitby floorType   combine transactions by periodic date (values none, yearly, quarterly, monthly, today)
+      --sum                 summarise transactions
+      --type reportType     report type (Text, Ledger)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --ccy string       Base Currency
-      --colour           Colour (ansi) for reports (default true)
-      --divider string   Divider for account components for reports (default ":")
-      --lang string      Language (default "en_GB.UTF-8")
-  -l, --ledger string    Ledger to read (default "main.ledger")
-      --verbose          Verbose
+      --ccy string       base currency
+      --colour           colour (ansi) for reports (default true)
+      --divider string   divider for account components for reports (default ":")
+      --lang string      language (default "en_GB.UTF-8")
+  -l, --ledger string    ledger to read (default "main.ledger")
+      --verbose          verbose
 ```
 
 ### SEE ALSO

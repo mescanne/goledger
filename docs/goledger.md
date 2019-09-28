@@ -13,13 +13,13 @@ and ledger cli (https://www.ledger-cli.org/)
 ### Options
 
 ```
-      --ccy string       Base Currency
-      --colour           Colour (ansi) for reports (default true)
-      --divider string   Divider for account components for reports (default ":")
+      --ccy string       base currency
+      --colour           colour (ansi) for reports (default true)
+      --divider string   divider for account components for reports (default ":")
   -h, --help             help for goledger
-      --lang string      Language (default "en_GB.UTF-8")
-  -l, --ledger string    Ledger to read (default "main.ledger")
-      --verbose          Verbose
+      --lang string      language (default "en_GB.UTF-8")
+  -l, --ledger string    ledger to read (default "main.ledger")
+      --verbose          verbose
       --version          version for goledger
 ```
 
@@ -29,7 +29,7 @@ and ledger cli (https://www.ledger-cli.org/)
 * [goledger ccy](goledger_ccy.md)	 - Show currency configuration (decimals)
 * [goledger docs](goledger_docs.md)	 - Generate manpages
 * [goledger import](goledger_import.md)	 - Import transactions
-* [goledger register](goledger_register.md)	 - short reg
+* [goledger register](goledger_register.md)	 - Show registry of account postings
 * [goledger report](goledger_report.md)	 - Aggregated transaction reports
 * [goledger shell](goledger_shell.md)	 - Shell integration
 
