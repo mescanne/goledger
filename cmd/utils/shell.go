@@ -5,12 +5,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var shell_long = `Shell integration
+
+This integrates into the shell. For bash for example:
+
+  eval "$(goledger shell --type=bash)"
+
+This is designed to make it much easier to use goledger
+from the command line.
+`
+
 func AddShell(root *cobra.Command) {
 	ncmd := &cobra.Command{
 		Use:               "shell",
 		Short:             "Shell integration",
 		Aliases:           []string{"completions"},
-		Long:              "long completions",
+		Long:              shell_long,
 		DisableAutoGenTag: true,
 	}
 
