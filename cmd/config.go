@@ -121,7 +121,6 @@ const DEFAULT_CONFIG_FILE = `
 # Defaults for the report command
 #
 [report]
-<<<<<<< HEAD
 combineby = "today"
 type =      "Ansi"
 sum =       true
@@ -137,7 +136,6 @@ macroA = [
 #
 # Defaults for the register command
 #
-<<<<<<< HEAD
 
 [register]
 accounts = [
