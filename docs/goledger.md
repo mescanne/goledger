@@ -31,8 +31,8 @@ and ledger cli (https://www.ledger-cli.org/)
 * [goledger docs](goledger_docs.md)	 - Generate manpages
 * [goledger format](goledger_format.md)	 - Import format syntax
 * [goledger import](goledger_import.md)	 - Import transactions
-* [goledger macros](goledger_macros.md)	 - preconfigured macros for operations
-* [goledger ops](goledger_ops.md)	 - operations on books
+* [goledger macros](goledger_macros.md)	 - Preconfigured macros for operations
+* [goledger ops](goledger_ops.md)	 - Operations on books
 * [goledger register](goledger_register.md)	 - Show registry of account postings
 * [goledger report](goledger_report.md)	 - Aggregated transaction reports
 * [goledger shell](goledger_shell.md)	 - Shell integration

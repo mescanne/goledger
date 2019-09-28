@@ -2,7 +2,7 @@ Import Formats
 
 The format for the import configuration:
 
-  <type>:<key>=<value>[,<key=value>,...]
+  type:key=value[,key=value,...]
 
 There is one import format type 'csv', but more can be added in the future.
 
