@@ -72,7 +72,7 @@ func load(name string, app *Config) error {
 
 	// Load default config
 	if _, err := toml.Decode(DEFAULT_CONFIG_FILE, app); err != nil {
-		return fmt.Errorf("Failed unmarshalling from default config: %w\n", err)
+		return fmt.Errorf("failed unmarshalling from default config: %w\n", err)
 	}
 
 	fmt.Printf("Created new configuration file '%s'. (See file or %s help config for more info)\n", files[0], name)

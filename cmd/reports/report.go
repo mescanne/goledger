@@ -70,14 +70,14 @@ func Add(cmd *cobra.Command, app *app.App, report *TransactionReport) {
 
 	cmd.AddCommand(&cobra.Command{
 		Use:               "ops",
-		Short:             "operations on books",
+		Short:             "Operations on books",
 		Long:              BookOperationUsage,
 		DisableAutoGenTag: true,
 	})
 
 	cmd.AddCommand(&cobra.Command{
 		Use:               "macros",
-		Short:             "preconfigured macros for operations",
+		Short:             "Preconfigured macros for operations",
 		Long:              mustResolveTemplate("macros", macroTemplate, report.Macros),
 		DisableAutoGenTag: true,
 	})
