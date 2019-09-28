@@ -58,22 +58,6 @@ func (rr *basicReader) parseNote() string {
 	return buf.String()
 }
 
-//func newRuneReader(b *book.BookBuilder, prices *book.PriceBook, reader *bufio.Reader) *basicReader {
-/*
-func newRuneReader(reader *bufio.Reader) *runeReader {
-  r := &runeReader{
-    basicReader: basicReader{
-      reader: reader,
-    },
-    //book: b,
-    //prices: prices,
-    //trans: nil,
-  }
-  r.next()
-  return r
-}
-*/
-
 func (rr *basicReader) parseTransaction() (book.Date, string, string) {
 	date := rr.parseDate()
 	payee := rr.parsePayee()
@@ -100,15 +84,14 @@ func (rr *basicReader) parseAccount() string {
 	_ = rr.consumeWS()
 
 	var buf bytes.Buffer
-	// TODO: Huh? Obscure ledger feature
 	if rr.ch == '!' || rr.ch == '[' {
 		rr.next()
 	}
 	for (rr.ch >= 'a' && rr.ch <= 'z') ||
 		(rr.ch >= 'A' && rr.ch <= 'Z') ||
-		(rr.ch == '&') || // TODO: Remove this
-		(rr.ch == '\'') || // TODO: Remove this
-		(rr.ch >= '0' && rr.ch <= '9') || // Odd, but valid
+		(rr.ch == '&') ||
+		(rr.ch == '\'') ||
+		(rr.ch >= '0' && rr.ch <= '9') ||
 		rr.ch == ':' || rr.ch == '_' {
 		buf.WriteRune(rr.ch)
 		rr.next()
@@ -145,12 +128,7 @@ func (rr *basicReader) parseCCY() string {
 		rr.next()
 	}
 
-	r := buf.String()
-	if r == "£ " {
-		fmt.Printf("Got ccy: '%s' from %v\n", r, runes)
-	}
-
-	return r
+	return buf.String()
 }
 
 func (rr *basicReader) parseInclude() string {
@@ -173,10 +151,9 @@ func (rr *basicReader) skipLine() {
 	if rr.ch == eol {
 		rr.next()
 	}
-	//log.Printf("Skipped line: %s!\n", buf.String())
 }
 
-func (rr *basicReader) parsePrice2(loader TransactionLoader) {
+func (rr *basicReader) parsePrice(loader TransactionLoader) {
 	if rr.ch != 'P' {
 		panic(fmt.Sprintf("Expected 'P', got %v", rr.ch))
 	}
@@ -220,15 +197,12 @@ func ParseFile(loader TransactionLoader, filename string) (reterr error) {
 		}
 	}()
 
-	//rr := newRuneReader(prices, bufio.NewReader(file))
 	rr := newRuneReader(bufio.NewReader(file))
 	for rr.ch != eof {
 		lines++
 
 		// Move forward to first non-whitespace
 		ws := rr.consumeWS()
-
-		//log.Printf("First character after %v whitespace: %c.. EOL? %v\n", ws, rr.ch, rr.ch == eol)
 
 		// Skip comment, eof
 		if rr.ch == ';' || rr.ch == eol || rr.ch == eof {
@@ -246,7 +220,7 @@ func ParseFile(loader TransactionLoader, filename string) (reterr error) {
 			}
 
 			if rr.ch == 'P' {
-				rr.parsePrice2(loader)
+				rr.parsePrice(loader)
 				continue
 			}
 
@@ -259,11 +233,8 @@ func ParseFile(loader TransactionLoader, filename string) (reterr error) {
 
 			// Expect "include <filename>"
 			ifile := rr.parseInclude()
-			// log.Printf("Parsed filename:%v!", ifile)
 			ParseFile(loader, filepath.Join(filepath.Dir(filename), ifile))
 			continue
-
-			// panic(fmt.Sprintf("Unexpected character: %v", rr.ch))
 		}
 
 		// indented means posting!

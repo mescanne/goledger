@@ -87,7 +87,6 @@ func (rr *basicReader) next() rune {
 		log.Fatal(err)
 	}
 	rr.ch = r
-	//log.Printf("Read character: (%v)\n", rr.ch)
 	return r
 }
 
