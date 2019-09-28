@@ -76,12 +76,12 @@ func (app *App) LoadCommand() *cobra.Command {
 		DisableAutoGenTag:      true,
 	}
 
-	appCmd.PersistentFlags().StringVarP(&app.Ledger, "ledger", "l", app.Ledger, "Ledger to read")
-	appCmd.PersistentFlags().StringVar(&app.BaseCCY, "ccy", app.BaseCCY, "Base Currency")
-	appCmd.PersistentFlags().StringVar(&app.Divider, "divider", app.Divider, "Divider for account components for reports")
-	appCmd.PersistentFlags().StringVar(&app.Lang, "lang", app.Lang, "Language")
-	appCmd.PersistentFlags().BoolVar(&app.Verbose, "verbose", app.Verbose, "Verbose")
-	appCmd.PersistentFlags().BoolVar(&app.Colour, "colour", app.Colour, "Colour (ansi) for reports")
+	appCmd.PersistentFlags().StringVarP(&app.Ledger, "ledger", "l", app.Ledger, "ledger to read")
+	appCmd.PersistentFlags().StringVar(&app.BaseCCY, "ccy", app.BaseCCY, "base currency")
+	appCmd.PersistentFlags().StringVar(&app.Divider, "divider", app.Divider, "divider for account components for reports")
+	appCmd.PersistentFlags().StringVar(&app.Lang, "lang", app.Lang, "language")
+	appCmd.PersistentFlags().BoolVar(&app.Verbose, "verbose", app.Verbose, "verbose")
+	appCmd.PersistentFlags().BoolVar(&app.Colour, "colour", app.Colour, "colour (ansi) for reports")
 
 	appCmd.InitDefaultHelpCmd()
 	appCmd.InitDefaultHelpFlag()

@@ -19,21 +19,28 @@ type RegisterReport struct {
 	Accounts  []string
 }
 
+const register_long = `Register account postings
+
+Show a registry of postings for an individual account. This
+is useful for reconciliation between accounts and for investigating
+one account.
+`
+
 func Add(cmd *cobra.Command, app *app.App, reg *RegisterReport) {
 	ncmd := &cobra.Command{
 		Args:              cobra.MinimumNArgs(1),
 		ValidArgs:         reg.Accounts,
 		Use:               "register [acct regex]...",
-		Long:              "long reg\nmultiline\n",
-		Short:             "short reg",
+		Long:              register_long,
+		Short:             "Show registry of account postings",
 		DisableAutoGenTag: true,
 	}
 
 	// Set defaults
-	ncmd.Flags().StringVar(&reg.BeginDate, "begin", reg.BeginDate, "Begin date")
-	ncmd.Flags().StringVar(&reg.EndDate, "asof", reg.EndDate, "End date")
-	ncmd.Flags().IntVar(&reg.Count, "count", reg.Count, "Count of entries (0 = no limit)")
-	ncmd.Flags().BoolVar(&reg.Asc, "asc", reg.Asc, "Ascending or descending order")
+	ncmd.Flags().StringVar(&reg.BeginDate, "begin", reg.BeginDate, "begin date")
+	ncmd.Flags().StringVar(&reg.EndDate, "asof", reg.EndDate, "end date")
+	ncmd.Flags().IntVar(&reg.Count, "count", reg.Count, "count of entries (0 = no limit)")
+	ncmd.Flags().BoolVar(&reg.Asc, "asc", reg.Asc, "ascending or descending order")
 	ncmd.RunE = func(cmd *cobra.Command, args []string) error {
 		return reg.run(app, cmd, args)
 	}

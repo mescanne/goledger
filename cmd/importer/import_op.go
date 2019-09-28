@@ -9,15 +9,6 @@ import (
 	"math/big"
 )
 
-var ImportFormatUsage = `Import Formats
-
-Description here.
-
-`
-
-// TODO: Update description per section
-// TODO: BookImporter becomes a reader -> array of (payee, date, amount) tuple
-
 type Import struct {
 	Payee  string
 	Date   book.Date
@@ -26,7 +17,31 @@ type Import struct {
 
 type BookImporter func(r io.Reader) ([]Import, error)
 
-//type BookImporter func(r io.Reader) (*book.Book, error)
+var ImportFormatUsage = `Import Formats
+
+The format for the import configuration:
+
+  <type>:<key>=<value>[,<key=value>,...]
+
+There is one import format type 'csv', but more can be added in the future.
+
+Import type 'csv' Parameters
+
+  payee, date, amount - 0-based column index for the payee, transaction date,
+                        and transaction amount
+  delim               - Delimiter for CSV file (default is ,)
+
+`
+
+func NewBookImporterByConfig(cfg *utils.CLIConfig) (BookImporter, error) {
+	if cfg.ConfigType == "" {
+		return nil, fmt.Errorf("missing import type")
+	} else if cfg.ConfigType == "csv" {
+		return NewCSVBookImporter(cfg)
+	} else {
+		return nil, fmt.Errorf("invalid import type: %s", cfg.ConfigType)
+	}
+}
 
 func NewCSVBookImporter(cfg *utils.CLIConfig) (BookImporter, error) {
 
@@ -89,16 +104,4 @@ func NewCSVBookImporter(cfg *utils.CLIConfig) (BookImporter, error) {
 		}
 		return output, nil
 	}, nil
-}
-
-//type BookImporter func(r io.Reader) (*book.Book, error)
-
-func NewBookImporterByConfig(cfg *utils.CLIConfig) (BookImporter, error) {
-	if cfg.ConfigType == "" {
-		return nil, fmt.Errorf("missing import type")
-	} else if cfg.ConfigType == "csv" {
-		return NewCSVBookImporter(cfg)
-	} else {
-		return nil, fmt.Errorf("invalid import type: %s", cfg.ConfigType)
-	}
 }

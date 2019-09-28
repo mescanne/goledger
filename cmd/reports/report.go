@@ -62,7 +62,7 @@ func Add(cmd *cobra.Command, app *app.App, report *TransactionReport) {
 	ncmd := &cobra.Command{
 		Aliases:           []string{"trans", "transactions"},
 		Use:               "report [macros|ops...]",
-		Short:             "Aggregated transaction reports",
+		Short:             "aggregated transaction reports",
 		Long:              report_long,
 		DisableAutoGenTag: true,
 	}
@@ -70,26 +70,26 @@ func Add(cmd *cobra.Command, app *app.App, report *TransactionReport) {
 
 	cmd.AddCommand(&cobra.Command{
 		Use:               "ops",
-		Short:             "Operations on books",
+		Short:             "operations on books",
 		Long:              BookOperationUsage,
 		DisableAutoGenTag: true,
 	})
 
 	cmd.AddCommand(&cobra.Command{
 		Use:               "macros",
-		Short:             "Preconfigured macros for operations",
+		Short:             "preconfigured macros for operations",
 		Long:              mustResolveTemplate("macros", macroTemplate, report.Macros),
 		DisableAutoGenTag: true,
 	})
 
 	// Set defaults
 	floorType := utils.NewEnum(&report.Combineby, book.FloorTypes, "floorType")
-	ncmd.Flags().Var(floorType, "splitby", fmt.Sprintf("Combine transactions by periodic date (values %s)", floorType.Values()))
+	ncmd.Flags().Var(floorType, "splitby", fmt.Sprintf("combine transactions by periodic date (values %s)", floorType.Values()))
 	reportType := utils.NewEnum(&report.Type, []string{"Text", "Ledger"}, "reportType")
-	ncmd.Flags().Var(reportType, "type", fmt.Sprintf("Report type (%s)", reportType.Values()))
-	ncmd.Flags().BoolVar(&report.Sum, "sum", report.Sum, "Summarise transactions")
-	ncmd.Flags().BoolVar(&report.Convert, "convert", report.Convert, "Convert to base currency")
-	ncmd.Flags().StringVar(&report.Credit, "credit", report.Credit, "Credit account regex")
+	ncmd.Flags().Var(reportType, "type", fmt.Sprintf("report type (%s)", reportType.Values()))
+	ncmd.Flags().BoolVar(&report.Sum, "sum", report.Sum, "summarise transactions")
+	ncmd.Flags().BoolVar(&report.Convert, "convert", report.Convert, "convert to base currency")
+	ncmd.Flags().StringVar(&report.Credit, "credit", report.Credit, "credit account regex")
 
 	// don't need to save it
 	macroNames := make([]string, 0, len(report.Macros))

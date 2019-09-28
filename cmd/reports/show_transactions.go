@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/mescanne/goledger/book"
 	"github.com/mescanne/goledger/cmd/app"
-	"math/big"
 	"regexp"
 )
 
@@ -27,13 +26,18 @@ func ShowTransactions(b *app.BookPrinter, trans []book.Transaction, credit strin
 		return fmt.Errorf("failed compiling credit accounts '%s': %v", credit, err)
 	}
 
-	var zero big.Int
 	for _, posts := range trans {
-		l := posts.MaxAccountTerm(2)
+
+		// Show header
 		payee := posts.GetPayee()
 		if payee != "" {
 			b.Printf("\n%s - %s\n", posts.GetDate(), posts.GetPayee())
+		} else {
+			b.Printf("\n%s\n", posts.GetDate())
 		}
+
+		// Find max length for account names
+		l := posts.MaxAccountTerm(2)
 
 		// Find max length for numbers
 		maxlen := 0
@@ -47,9 +51,6 @@ func ShowTransactions(b *app.BookPrinter, trans []book.Transaction, credit strin
 		maxlen = maxlen + 1
 
 		for _, v := range posts {
-			if v.GetAmount().Num().Cmp(&zero) == 0 {
-				continue
-			}
 
 			// Print out account levels
 			parts := v.GetAccountLevel()
@@ -72,6 +73,7 @@ func ShowTransactions(b *app.BookPrinter, trans []book.Transaction, credit strin
 				amt.Neg(&amt)
 			}
 
+			// Print out money
 			b.Printf("%s\n", b.FormatMoney(v.GetCCY(), &amt, maxlen))
 		}
 	}

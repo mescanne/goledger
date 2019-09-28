@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"net/url"
 	"strconv"
 	"strings"
 )
@@ -43,26 +42,29 @@ func (cfg *CLIConfig) GetStringDefault(key string, dftl string) string {
 func (cfg *CLIConfig) Set(config string) error {
 	parts := strings.SplitN(config, ":", 2)
 	if len(parts) != 2 {
-		return fmt.Errorf("invalid config '%s': should be '<type>:arg=value[;arg=value,...]'", config)
+		return fmt.Errorf("invalid config '%s': should be '<type>:arg=value[,arg=value,...]'", config)
 	}
 
-	values, err := url.ParseQuery(parts[1])
-	if err != nil {
-		return fmt.Errorf("invalid config '%s': %v", config, err)
-	}
-
-	cfg.Params = make(map[string]string)
-	for k, v := range values {
-		if len(v) > 1 {
-			return fmt.Errorf("invalid config '%s': multiple values for key '%s'", config, k)
-		}
-		if len(v) == 0 {
-			return fmt.Errorf("invalid config '%s': no value for key '%s'", config, k)
-		}
-		cfg.Params[k] = v[0]
-	}
-
+	// Type is set
 	cfg.ConfigType = parts[0]
+
+	// Extract the parameters
+	cfg.Params = make(map[string]string)
+	for _, arg := range strings.Split(parts[1], ",") {
+
+		argpair := strings.SplitN(arg, "=", 2)
+		if len(argpair) != 2 {
+			return fmt.Errorf("invalid config '%s': invalid argument '%s', should be arg=value", config, arg)
+		}
+
+		_, ok := cfg.Params[argpair[0]]
+		if ok {
+			return fmt.Errorf("invalid config '%s': arg '%s' set more than once", config, argpair[0])
+		}
+
+		cfg.Params[argpair[0]] = argpair[1]
+	}
+
 	return nil
 }
 
@@ -73,12 +75,12 @@ func (e *CLIConfig) String() string {
 	keyv := make([]string, len(e.Params))
 	i := 0
 	for k, v := range e.Params {
-		keyv[i] = url.QueryEscape(k) + "=" + url.QueryEscape(v)
+		keyv[i] = k + "=" + v
 		i++
 	}
-	return e.ConfigType + ":" + strings.Join(keyv, ";")
+	return e.ConfigType + ":" + strings.Join(keyv, ",")
 }
 
 func (cfg *CLIConfig) Type() string {
-	return "<type>:<k=v;...>"
+	return "<type>:<k=v,...>"
 }

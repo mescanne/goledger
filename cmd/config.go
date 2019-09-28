@@ -106,11 +106,11 @@ const DEFAULT_CONFIG_FILE = `
 # Defaults for the transaction command
 #
 [transactioncmd]
-# combineby = "today"
-# type =      "Ansi"
-# sum =       true
-# convert =   true
-# credit =    "^(Income|Trading|Liability|Equity)(:.*)?$"
+combineby = "today"
+type =      "Ansi"
+sum =       true
+convert =   true
+credit =    "^(Income|Trading|Liability|Equity)(:.*)?$"
 
 #
 # Defaults for the register command
@@ -119,25 +119,25 @@ const DEFAULT_CONFIG_FILE = `
 accounts = [
   "Asset:<Default>",
 ]
-# count = -100
-# asc = true
+count = -100
+asc = true
 
-[[importdefs]]
-name = "fdcurr"
-description = "FirstDirect Current Account"
+[importdefs.bankformat]
+description = "Bank Format"
 configtype = "csv"
-account = "Asset:Joint:Current:FirstDirectCurrent"
-counteraccount = "Expense:Joint:Miscellaneous"
+account = "Asset:BankDefaultAccount"
+counteraccount = "Expense:DefaultExpenseAccount"
 dedup = true
 reclassify = true
-[importdefs.params]
+
+[importdefs.bankformat.params]
 ccy = "£"
 date = "0"
 amount = "2"
 payee = "1"
 
-[macros]
-macroA = [
+[transactioncmd.macros]
+samplemacro = [
 	"book operation A",
 	"book operation B",
 ]

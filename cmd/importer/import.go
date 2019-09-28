@@ -96,17 +96,17 @@ func (imp *ImportDef) add(app *app.App) *cobra.Command {
 		Args:              cobra.MinimumNArgs(1),
 		DisableAutoGenTag: true,
 	}
-	ncmd.Flags().BoolVarP(&imp.Dedup, "dedup", "d", imp.Dedup, "Deduplicate transactions based on payee and date")
-	ncmd.Flags().BoolVarP(&imp.Reclassify, "reclassify", "r", imp.Reclassify, "Reclassify the counteraccount based on previous transactions")
-	ncmd.Flags().Var(&imp.CLIConfig, "format", "Format of input (see help format)")
+	ncmd.Flags().BoolVarP(&imp.Dedup, "dedup", "d", imp.Dedup, "deduplicate transactions based on payee and date")
+	ncmd.Flags().BoolVarP(&imp.Reclassify, "reclassify", "r", imp.Reclassify, "reclassify the counteraccount based on previous transactions")
+	ncmd.Flags().Var(&imp.CLIConfig, "format", "format of input (see help format)")
 	if imp.CLIConfig.ConfigType == "" {
 		cobra.MarkFlagRequired(ncmd.Flags(), "format")
 	}
-	ncmd.Flags().StringVarP(&imp.Account, "acct", "a", imp.Account, "Account for imported postings")
+	ncmd.Flags().StringVarP(&imp.Account, "acct", "a", imp.Account, "account for imported postings")
 	if imp.Account == "" {
 		cobra.MarkFlagRequired(ncmd.Flags(), "acct")
 	}
-	ncmd.Flags().StringVarP(&imp.CounterAccount, "cacct", "c", imp.CounterAccount, "Counteraccount for new transactions")
+	ncmd.Flags().StringVarP(&imp.CounterAccount, "cacct", "c", imp.CounterAccount, "counteraccount for new transactions")
 	if imp.CounterAccount == "" {
 		cobra.MarkFlagRequired(ncmd.Flags(), "cacct")
 	}
