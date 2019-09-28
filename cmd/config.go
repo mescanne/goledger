@@ -97,6 +97,10 @@ There are two notable exceptions:
     configuration pre-configured. This allows you to create an import
     definition per CSV file (or other format) that you download.
 
+  - register.accounts
+    List of accounts that shell-completion will match if used. This is
+    to make it easier to use the CLI.
+
 Starter configuration file:
 `
 
@@ -117,6 +121,7 @@ const DEFAULT_CONFIG_FILE = `
 # Defaults for the report command
 #
 [report]
+<<<<<<< HEAD
 combineby = "today"
 type =      "Ansi"
 sum =       true
@@ -132,10 +137,11 @@ macroA = [
 #
 # Defaults for the register command
 #
+<<<<<<< HEAD
 
 [register]
 accounts = [
-  "Asset:<Default>",
+  "Asset:Default",
 ]
 count = -100
 asc = true
