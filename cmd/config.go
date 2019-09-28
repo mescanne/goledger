@@ -80,28 +80,37 @@ func load(name string, app *Config) error {
 	return nil
 }
 
-const config_help = `
-Blah blah
-`
+const config_help = `Configuration File
 
-const config_tail = `
-Blah blah
+The configuration file mirrors largely mirrors parameters available
+on the command line.
+
+There are two notable exceptions:
+  - report.macros
+    This section defines macros for the report (set of operations) that
+    can be used on the command line arguments or by other macros. This
+    is how complex reports can be built up.
+
+  - importdefs.<name>
+    Defining a new importdefs <name> will create a sub-command under
+    import that has all of the command line parameters and the import
+    configuration pre-configured. This allows you to create an import
+    definition per CSV file (or other format) that you download.
+
+Starter configuration file:
 `
 
 const ALL_CONFIG = config_help +
 	"```" +
 	DEFAULT_CONFIG_FILE +
-	"```" +
-	config_tail
+	"```"
 
 const DEFAULT_CONFIG_FILE = `
 
 #
 # Main defaults
 #
-## Default ledger file
 #ledger =  "default_ledger_file"
-## Default base CCY (for reporting)
 #baseccy = "£"
 
 #

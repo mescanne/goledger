@@ -1,5 +1,9 @@
 package book
 
+// Remove transactions from book that already exists in the main book.
+//
+// This matches only (date, payee) unique combinations and doesn't inspect
+// the actual postings within the transaction.
 func (b *Book) RemoveDuplicatesOf(main *Book) {
 	reftrans := main.Transactions()
 	refidx := 0

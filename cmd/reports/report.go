@@ -62,7 +62,7 @@ func Add(cmd *cobra.Command, app *app.App, report *TransactionReport) {
 	ncmd := &cobra.Command{
 		Aliases:           []string{"trans", "transactions"},
 		Use:               "report [macros|ops...]",
-		Short:             "aggregated transaction reports",
+		Short:             "Aggregated transaction reports",
 		Long:              report_long,
 		DisableAutoGenTag: true,
 	}

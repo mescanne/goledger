@@ -84,6 +84,19 @@ func splitByStringsOld(prefixes map[string]bool, acct string, includeSelf bool, 
 	return o
 }
 
+// Accumulate returns transactions whose postings will have
+// interesting values in GetAccountLevel() and GetAccountTerm().
+//
+// Specifically for each posting:
+//  - If of different currency than toCCY, a parent account converted is created
+//  - Parent accounts that reflect common stems are created with totals
+//
+// GetAccountLevel() and GetAccountTerm() reflect the level in the summary tree,
+// and the final account stem.
+//
+// This function is only really useful for doing the calculations for reporting
+// purposes.
+//
 func (b *Book) Accumulate(toCCY string, divider string) []Transaction {
 
 	// only need some of compact functionality
