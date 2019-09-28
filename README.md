@@ -21,3 +21,21 @@ The key difference you can find in goledger:
  * [godoc](https://godoc.org/github.com/mescanne/goledger)
  * [goledger docs](docs/goledger.md)
 
+## Installation
+
+  go get -u github/mescanne/goledger
+
+## Running
+
+The first time you run it there will be a sample configuration file
+written into $HOME/.config/goledger/goledger.toml. You can
+move this to another location and specify it using GOLEGER_CONF 
+environment variable.
+
+This configuration file configures your experience using goledger,
+including default arguments (location of ledger, base currency),
+macros for making reports, import parsing definitions, registry
+accounts for inspection, and more.
+
+It is recommended you use the shell integration as this will use
+your configuration file to generate the shell integration.
