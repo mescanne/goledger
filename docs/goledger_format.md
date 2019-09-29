@@ -10,7 +10,8 @@ Import type 'csv' Parameters
 
   payee, date, amount - 0-based column index for the payee, transaction date,
                         and transaction amount
-  delim               - Delimiter for CSV file (default is ,)
+  skip                - number of header lines to skip (default is 0)
+  delim               - delimiter for CSV file (default is ,)
 
 
 

@@ -73,7 +73,7 @@ func (reg *RegisterReport) run(app *app.App, cmd *cobra.Command, args []string) 
 			// Filter the number of transactions
 			if reg.Count > 0 {
 				trans = trans[0:reg.Count]
-			} else {
+			} else if len(trans)+reg.Count > 0 {
 				trans = trans[len(trans)+reg.Count : len(trans)]
 			}
 

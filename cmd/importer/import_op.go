@@ -29,7 +29,8 @@ Import type 'csv' Parameters
 
   payee, date, amount - 0-based column index for the payee, transaction date,
                         and transaction amount
-  delim               - Delimiter for CSV file (default is ,)
+  skip                - number of header lines to skip (default is 0)
+  delim               - delimiter for CSV file (default is ,)
 
 `
 
@@ -70,16 +71,23 @@ func NewCSVBookImporter(cfg *utils.CLIConfig) (BookImporter, error) {
 		return nil, fmt.Errorf("invalid delimiter '%s': length not one character", delim)
 	}
 
+	skip := cfg.GetIntDefault("skip", 0)
+
 	return func(r io.Reader) ([]Import, error) {
 		csvr := csv.NewReader(r)
 		csvr.Comma = []rune(delim)[0]
 		csvr.TrimLeadingSpace = true
 		csvr.ReuseRecord = true
 		output := make([]Import, 0, 100)
+		skiprec := skip
 		for {
 			recs, err := csvr.Read()
 			if err == io.EOF {
 				break
+			}
+			if skiprec > 0 {
+				skiprec -= 1
+				continue
 			}
 			if err != nil {
 				return nil, fmt.Errorf("error importing csv: %v", err)

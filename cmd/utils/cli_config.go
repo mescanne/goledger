@@ -23,6 +23,14 @@ func (cfg *CLIConfig) GetInt(key string) (int, error) {
 	return i, nil
 }
 
+func (cfg *CLIConfig) GetIntDefault(key string, dftl int) int {
+	i, err := cfg.GetInt(key)
+	if err != nil {
+		return dftl
+	}
+	return i
+}
+
 func (cfg *CLIConfig) GetString(key string) (string, error) {
 	v, ok := cfg.Params[key]
 	if !ok {
