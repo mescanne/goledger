@@ -6,7 +6,9 @@ import (
 	"golang.org/x/text/message/catalog"
 	"io"
 	"math/big"
+	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 // BookPrinter provides formatting for console-based
@@ -116,8 +118,13 @@ func (b *BookPrinter) BlueUL(i string) string {
 // Format the number (with colour if enabled) to a maximum length
 // (between symbol and number) and return the string
 func (b *BookPrinter) FormatMoney(symbol string, amount *big.Rat, maxlen int) string {
-	num := b.pr.Sprintf("%s%*s", b.FormatSymbol(symbol), maxlen, b.FormatNumber(symbol, amount))
+	sym := b.FormatSymbol(symbol)
+	l := maxlen - utf8.RuneCountInString(sym)
+	num := b.pr.Sprintf("%s%*s", sym, l, b.FormatNumber(symbol, amount))
 	var zero big.Rat
+	if b.colour {
+		num = strings.ReplaceAll(num, "  ", " ·")
+	}
 	if amount.Cmp(&zero) >= 0 {
 		return b.Blue(num)
 	} else {

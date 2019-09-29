@@ -76,11 +76,18 @@ func (b *Book) compact() {
 	// Shrink again, except exclude targetIdx this time
 	b.post = p[:targetIdx]
 
+	// Reset transactions
+	b.trans = b.trans[:0]
+
+	// If there are no posts, then exit early
+	if len(b.post) == 0 {
+		return
+	}
+
 	// Transaction re-index
 	p = b.post
 	lastIdx := 0
 	i := 1
-	b.trans = b.trans[:0]
 	for {
 		if i == len(p) || p[i].date != p[lastIdx].date || p[i].payee != p[lastIdx].payee {
 			b.trans = append(b.trans, p[lastIdx:i])

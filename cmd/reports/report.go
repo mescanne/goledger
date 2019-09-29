@@ -13,6 +13,7 @@ import (
 
 type TransactionReport struct {
 	Credit    string
+	Hidden    string
 	Convert   bool
 	Sum       bool
 	Type      string
@@ -90,6 +91,7 @@ func Add(cmd *cobra.Command, app *app.App, report *TransactionReport) {
 	ncmd.Flags().BoolVar(&report.Sum, "sum", report.Sum, "summarise transactions")
 	ncmd.Flags().BoolVar(&report.Convert, "convert", report.Convert, "convert to base currency")
 	ncmd.Flags().StringVar(&report.Credit, "credit", report.Credit, "credit account regex")
+	ncmd.Flags().StringVar(&report.Hidden, "hidden", report.Hidden, "hidden account in reports")
 
 	// don't need to save it
 	macroNames := make([]string, 0, len(report.Macros))
@@ -145,7 +147,7 @@ func (report *TransactionReport) run(app *app.App, cmd *cobra.Command, args []st
 
 	// Need type of report now..
 	if report.Type == "Text" {
-		return ShowTransactions(bp, trans, report.Credit)
+		return ShowTransactions(bp, trans, report.Credit, report.Hidden)
 	} else {
 		return ShowLedger(bp, trans)
 	}

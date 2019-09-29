@@ -5,6 +5,7 @@ import (
 	"github.com/mescanne/goledger/book"
 	"github.com/mescanne/goledger/cmd/app"
 	"regexp"
+	"unicode/utf8"
 )
 
 func ShowLedger(b *app.BookPrinter, trans []book.Transaction) error {
@@ -18,7 +19,7 @@ func ShowLedger(b *app.BookPrinter, trans []book.Transaction) error {
 	return nil
 }
 
-func ShowTransactions(b *app.BookPrinter, trans []book.Transaction, credit string) error {
+func ShowTransactions(b *app.BookPrinter, trans []book.Transaction, credit string, hidden string) error {
 
 	// Compile credit-account matcher
 	re, err := regexp.Compile(credit)
@@ -42,15 +43,19 @@ func ShowTransactions(b *app.BookPrinter, trans []book.Transaction, credit strin
 		// Find max length for numbers
 		maxlen := 0
 		for _, v := range posts {
-			f, _ := v.GetAmount().Float64()
-			nl := len(b.Sprintf("%.0f", f))
+			rv := b.FormatNumber(v.GetCCY(), v.GetAmount())
+			nl := utf8.RuneCountInString(v.GetCCY()) + len(rv) + 1
 			if nl > maxlen {
 				maxlen = nl
 			}
 		}
-		maxlen = maxlen + 1
 
 		for _, v := range posts {
+
+			// Skip if hidden
+			if v.GetAccount() == hidden {
+				continue
+			}
 
 			// Print out account levels
 			parts := v.GetAccountLevel()
