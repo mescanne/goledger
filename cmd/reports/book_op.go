@@ -5,6 +5,7 @@ import (
 	"github.com/mescanne/goledger/book"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 var BookOperationUsage = `Book Operations
@@ -60,20 +61,18 @@ Operations:
 
     This will include everything since the preceeding Jan 1st (including Jan 1st),
     up to the subsequent Jan 1st (excluding Jan 1st).
-`
 
-/*
-* TODO:
-* Operations:
-* asof=YYYY-MM-DD or etc. This sets the end date.
-* since=YYYY-MM-DD or etc. This sets the since date.
- */
+  combine=type
+
+    Type can be yearly, quarterly, monthly, or today. This will floor all
+    transaction dates according to the rule.
+`
 
 // Operation must match this regular expression prefix
 var re_op_prefix = regexp.MustCompile("^[A-Za-z][0-9A-Za-z_]*=")
 
+// Regexp for map and move
 var map_op = regexp.MustCompile("^/([^/]+)/([^/]+)/(([^/]+)/)?$")
-
 var move_op = regexp.MustCompile("^/([^/]+)/([^/]+)/([0-9\\.]+)/$")
 
 func BookOp(op string, b *book.Book, macros map[string][]string) error {
@@ -126,10 +125,19 @@ func BookOp(op string, b *book.Book, macros map[string][]string) error {
 	case "since=":
 		d := book.DateFromString(op_act)
 		if d == book.Date(0) {
-			return fmt.Errorf("asof date '%s', invalid", op_act)
+			return fmt.Errorf("since date '%s', invalid", op_act)
 		}
 		b.FilterByDateSince(d)
 		return nil
+	case "combine=":
+		for _, typ := range book.FloorTypes {
+			if strings.EqualFold(op_act, typ) {
+				b.SplitBy(typ)
+				return nil
+			}
+		}
+		return fmt.Errorf("combine type '%s', invalid: must be one of %s",
+			op_act, strings.Join(book.FloorTypes, ","))
 	default:
 		return fmt.Errorf("operation type '%s' invalid: must be one of map, move", op_type)
 	}

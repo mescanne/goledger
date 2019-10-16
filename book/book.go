@@ -149,11 +149,14 @@ func (b *Book) FilterTransactionReverse(filter func(date Date, payee string, pos
 
 	// Target
 	newp := make(Transaction, 0, len(b.post))
+	newt := make([]Transaction, 0, len(b.trans))
 
 	for i := len(b.trans) - 1; i >= 0; i-- {
 		p := b.trans[i]
 		if filter(p[0].date, p[0].payee, p) {
+			idx := len(newp)
 			newp = append(newp, p...)
+			newt = append(newt, newp[idx:len(newp)])
 		}
 	}
 
@@ -164,15 +167,18 @@ func (b *Book) FilterTransaction(filter func(date Date, payee string, posts Tran
 
 	// Target
 	newp := make([]Posting, 0, len(b.post))
+	newt := make([]Transaction, 0, len(b.trans))
 
 	for _, p := range b.trans {
 		if filter(p[0].date, p[0].payee, p) {
+			idx := len(newp)
 			newp = append(newp, p...)
-			//b.trans = append(b.trans, p)
+			newt = append(newt, newp[idx:len(newp)])
 		}
 	}
 
 	b.post = newp
+	b.trans = newt
 }
 
 func (b *Book) MapTransaction(mapper func(date Date, payee string) (Date, string)) {

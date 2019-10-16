@@ -25,7 +25,6 @@ func (b *Book) RegexAccounts(search string, replace string, alt string) {
 	})
 }
 
-// FilterByDate
 func (b *Book) FilterByDateSince(minDate Date) {
 	if minDate == 0 {
 		return
