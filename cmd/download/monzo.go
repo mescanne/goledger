@@ -28,7 +28,7 @@ func (m *MonzoDownload) Add(root *cobra.Command) {
 	}
 
 	ncmd := &cobra.Command{
-		Use:               "monzo <statefile.json>",
+		Use:               "monzo <statefile.json[.gz]>",
 		Short:             "Download data from Monzo",
 		Long:              "Download data from Monzo",
 		DisableAutoGenTag: true,
@@ -157,7 +157,28 @@ func (m *MonzoDownload) NewMonzoClient(file string) (*MonzoClient, error) {
 		}
 
 		// Success, but we can't do anything until authorised on app as well.
-		return nil, fmt.Errorf("Monzo must be authorised in app first -- retry after authorised")
+		return nil, fmt.Errorf("monzo must be authorised in app first -- retry after authorised")
+	}
+
+	// Refresh token if needed
+	if config.Token.Expiry.Before(time.Now()) {
+		src := conf.TokenSource(ctx, config.Token)
+		newToken, err := src.Token() // Renew the token
+		if err != nil {
+			return nil, fmt.Errorf("failed renewing token: %w", err)
+		}
+
+		// Capture new token
+		if newToken.AccessToken != config.Token.AccessToken {
+			fmt.Printf("Refreshed access token.\n")
+
+			config.Token = newToken
+
+			// Save it.
+			if err := utils.SaveToFile(file, &config); err != nil {
+				return nil, fmt.Errorf("failed saving: %w", err)
+			}
+		}
 	}
 
 	// New client
