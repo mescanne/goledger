@@ -74,6 +74,8 @@ func (app *App) LoadCommand() *cobra.Command {
 		BashCompletionFunction: custom_func,
 		Version:                version,
 		DisableAutoGenTag:      true,
+		SilenceUsage:           true,
+		SilenceErrors:          true,
 	}
 
 	appCmd.PersistentFlags().StringVarP(&app.Ledger, "ledger", "l", app.Ledger, "ledger to read")
