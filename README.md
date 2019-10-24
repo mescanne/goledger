@@ -23,7 +23,9 @@ The key difference you can find in goledger:
 
 ## Installation
 
-  go get -u github/mescanne/goledger
+Note: Goledger requires go 1.13.
+
+  go get -u github.com/mescanne/goledger
 
 ## Running
 
