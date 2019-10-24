@@ -62,16 +62,16 @@ func (imp *ImportDef) processData(idata starlark.Value, sc string) (*book.Book, 
 		// Optional extra values
 		var denom int = 1
 		var ccy string = imp.CCY
-		var note string
+		var note string = ""
+		var lnote string = ""
 		var account string = imp.Account
 		var caccount string = imp.CounterAccount
 
-		// TODO: Add local currency, local amount, local denom
 		err := starlark.UnpackArgs(b.Name(), args, kwargs,
 			"date", &date, "desc", &desc, "amt", &amount,
 			"ccy?", &ccy, "denom?", &denom,
 			"account?", &account, "caccount?", &caccount,
-			"note?", &note)
+			"note?", &note, "lnote?", &lnote)
 		if err != nil {
 			return nil, err
 		}
@@ -106,7 +106,7 @@ func (imp *ImportDef) processData(idata starlark.Value, sc string) (*book.Book, 
 
 		// Make the transaction
 		bbuilder.NewTransaction(ndate, string(desc), note)
-		bbuilder.AddPosting(account, ccy, amt, "")
+		bbuilder.AddPosting(account, ccy, amt, lnote)
 		bbuilder.AddPosting(caccount, ccy, neg, "")
 		return starlark.None, nil
 	}
@@ -115,7 +115,7 @@ func (imp *ImportDef) processData(idata starlark.Value, sc string) (*book.Book, 
 	thread := &starlark.Thread{
 		Name: "main",
 		Print: func(_ *starlark.Thread, msg string) {
-			fmt.Printf("code: %s\n", msg)
+			fmt.Printf("; %s\n", msg)
 		},
 	}
 

@@ -10,6 +10,10 @@ func (t Transaction) GetPayee() string {
 	return t[0].payee
 }
 
+func (t Transaction) GetTransactionNote() string {
+	return t[0].tnote
+}
+
 func (t Transaction) MaxAccountTerm(paddingByLevel int) int {
 	m := 0
 	for _, p := range t {

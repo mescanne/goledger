@@ -86,7 +86,6 @@ func (b *Builder) NewTransaction(date Date, payee string, note string) {
 	key := fmt.Sprintf("%d %s", date, payee)
 	_, ok := b.prevTrans[key]
 	if ok {
-		//panic(fmt.Sprintf("Duplicate transaction for date %d, payee %s!", date, payee))
 		payee = payee + " (again)"
 		key = fmt.Sprintf("%d %s", date, payee)
 	}
@@ -110,7 +109,6 @@ func (b *Builder) AddPosting(acct string, ccy string, amt *big.Rat, note string)
 		bal:       big.NewRat(0, 1),
 		acctlevel: 0,
 		acctterm:  acct,
-		//acctlevels: []string{acct},
 	})
 
 	v, ok := b.currAmts[ccy]

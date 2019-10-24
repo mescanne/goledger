@@ -40,6 +40,8 @@ There are four globals in the execution:
     * data. This the parsed data structure.
     * error(msg=msg). This function, if called, aborts all operation and reports the err msg.
     * print(...). This function is the same as the normal Python3 print and can be used for debugging.
+      It prints out with a semi-colon at the beginning, so is appropriate for adding text to the
+      ledger file.
     * add(). See below.
 
 Add is the method used for adding new postings:

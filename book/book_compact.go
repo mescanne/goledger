@@ -47,8 +47,6 @@ func (b *Book) compact() {
 			// If it's not our current index, then initialise it
 			if targetIdx < i {
 				p[targetIdx] = p[i]
-				p[targetIdx].tnote = ""
-				p[targetIdx].note = ""
 			}
 		}
 	}
