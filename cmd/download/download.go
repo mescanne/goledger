@@ -5,7 +5,7 @@ import (
 )
 
 type Download struct {
-	Monzo *MonzoDownload
+	Monzo MonzoDownload
 }
 
 func Add(root *cobra.Command, download *Download) {

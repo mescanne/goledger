@@ -13,12 +13,13 @@ goledger import [flags]
 ### Options
 
 ```
-  -a, --acct string               account for imported postings
-  -c, --cacct string              counteraccount for new transactions
-  -d, --dedup                     deduplicate transactions based on payee and date (default true)
-      --format <type>:<k=v,...>   format of input (see help format)
-  -h, --help                      help for import
-  -r, --reclassify                reclassify the counteraccount based on previous transactions (default true)
+  -a, --acct string                 account for imported postings
+  -c, --cacct string                counteraccount for new transactions
+      --code string                 code for import or file:<file> for external code (see help code)
+  -d, --dedup                       deduplicate transactions based on payee and date (default true)
+      --format <type>[:<k=v,...>]   format of input (see help format)
+  -h, --help                        help for import
+  -r, --reclassify                  reclassify the counteraccount based on previous transactions (default true)
 ```
 
 ### Options inherited from parent commands

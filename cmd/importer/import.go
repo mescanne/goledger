@@ -7,7 +7,6 @@ import (
 	"github.com/mescanne/goledger/cmd/reports"
 	"github.com/mescanne/goledger/cmd/utils"
 	"github.com/spf13/cobra"
-	"io"
 	"os"
 )
 
@@ -47,7 +46,6 @@ func (imp *ImportDef) run(app *app.App, rcmd *cobra.Command, args []string) erro
 	}
 
 	// Get the reader
-	// TODO: Need to iterate files, not read multi-file.
 	r := os.Stdin
 	if args[0] != "-" {
 		r, err = os.Open(args[0])
@@ -107,7 +105,7 @@ func (imp *ImportDef) add(name string, app *app.App) *cobra.Command {
 	ncmd.Flags().BoolVarP(&imp.Dedup, "dedup", "d", imp.Dedup, "deduplicate transactions based on payee and date")
 	ncmd.Flags().BoolVarP(&imp.Reclassify, "reclassify", "r", imp.Reclassify, "reclassify the counteraccount based on previous transactions")
 	if imp.Code == "" {
-		ncmd.Flags().StringVar(&imp.Code, "code", imp.Code, "code for import")
+		ncmd.Flags().StringVar(&imp.Code, "code", imp.Code, "code for import or file:<file> for external code (see help code)")
 		cobra.MarkFlagRequired(ncmd.Flags(), "code")
 	}
 	if imp.ConfigType == "" {
@@ -148,31 +146,8 @@ func Add(root *cobra.Command, app *app.App, config map[string]ImportDef) {
 	// Add in the help
 	root.AddCommand(&cobra.Command{
 		Use:               "format",
-		Short:             "Import format syntax",
-		Long:              ImportFormatUsage,
+		Short:             "Import format help",
+		Long:              ImportUsage,
 		DisableAutoGenTag: true,
 	})
-
-}
-
-func fileArgsToReader(args []string) (io.Reader, error) {
-	if len(args) == 0 {
-		return nil, fmt.Errorf("error missing arguments: no input specified")
-	}
-
-	if len(args) == 1 && args[0] == "-" {
-		return os.Stdin, nil
-	}
-
-	readers := make([]io.Reader, len(args))
-	for i, arg := range args {
-		r, err := os.Open(arg)
-		if err != nil {
-			return nil, fmt.Errorf("error opening %s: %w", arg, err)
-		}
-		readers[i] = r
-	}
-
-	// Multi reader
-	return io.MultiReader(readers...), nil
 }

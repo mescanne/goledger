@@ -18,14 +18,22 @@ The key difference you can find in goledger:
  * Configured by a config file. This is where you customise your default reports.
 
 ## Documentation
+
+Main docs:
  * [godoc](https://godoc.org/github.com/mescanne/goledger)
  * [goledger docs](docs/goledger.md)
 
+Additional Help Topics:
+ * [goledger config](docs/goledger_config.md)
+ * [goledger format](docs/goledger_format.md)
+ * [goledger macros](docs/goledger_macros.md)
+ * [goledger ops](docs/goledger_ops.md)
+
 ## Installation
 
-Note: Goledger requires go 1.13.
+Note: Goledger is built using go 1.13.
 
-   > go get -u github.com/mescanne/goledger
+    go get -u github.com/mescanne/goledger
 
 ## Running
 

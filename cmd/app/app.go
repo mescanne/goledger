@@ -74,7 +74,6 @@ func (app *App) LoadCommand() *cobra.Command {
 		BashCompletionFunction: custom_func,
 		Version:                version,
 		DisableAutoGenTag:      true,
-		SilenceUsage:           true,
 		SilenceErrors:          true,
 	}
 

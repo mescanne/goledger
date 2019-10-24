@@ -52,4 +52,9 @@ Operations:
     This will include everything since the preceeding Jan 1st (including Jan 1st),
     up to the subsequent Jan 1st (excluding Jan 1st).
 
+  combine=type
+
+    Type can be yearly, quarterly, monthly, or today. This will floor all
+    transaction dates according to the rule.
+
 

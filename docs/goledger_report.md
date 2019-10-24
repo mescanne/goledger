@@ -44,6 +44,7 @@ goledger report [macros|ops...] [flags]
       --convert             convert to base currency (default true)
       --credit string       credit account regex (default "^(Income|Trading|Liability|Equity)(:.*)?$")
   -h, --help                help for report
+      --hidden string       hidden account in reports
       --splitby floorType   combine transactions by periodic date (values none, yearly, quarterly, monthly, today) (default today)
       --sum                 summarise transactions (default true)
       --type reportType     report type (Text, Ledger) (default Ansi)
