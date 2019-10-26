@@ -8,6 +8,7 @@ import (
 	"go.starlark.net/starlark"
 	"io/ioutil"
 	"math/big"
+	"os"
 	"strings"
 )
 
@@ -135,7 +136,7 @@ func (imp *ImportDef) processData(idata starlark.Value, sc string) (*book.Book, 
 
 		// Full backtrace if possible
 		if evalErr, ok := err.(*starlark.EvalError); ok {
-			fmt.Printf("Runtime error stack: %s\n", evalErr.Backtrace())
+			fmt.Fprintf(os.Stderr, "Runtime error stack: %s\n", evalErr.Backtrace())
 		}
 
 		return nil, fmt.Errorf("importing: %w", err)
