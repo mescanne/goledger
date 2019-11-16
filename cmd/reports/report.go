@@ -86,7 +86,7 @@ func Add(cmd *cobra.Command, app *app.App, report *TransactionReport) {
 	// Set defaults
 	floorType := utils.NewEnum(&report.Combineby, book.FloorTypes, "floorType")
 	ncmd.Flags().Var(floorType, "splitby", fmt.Sprintf("combine transactions by periodic date (values %s)", floorType.Values()))
-	reportType := utils.NewEnum(&report.Type, []string{"Text", "Ledger"}, "reportType")
+	reportType := utils.NewEnum(&report.Type, []string{"Text", "Ledger", "Json", "JsonIndent"}, "reportType")
 	ncmd.Flags().Var(reportType, "type", fmt.Sprintf("report type (%s)", reportType.Values()))
 	ncmd.Flags().BoolVar(&report.Sum, "sum", report.Sum, "summarise transactions")
 	ncmd.Flags().BoolVar(&report.Convert, "convert", report.Convert, "convert to base currency")
@@ -148,6 +148,10 @@ func (report *TransactionReport) run(app *app.App, cmd *cobra.Command, args []st
 	// Need type of report now..
 	if report.Type == "Text" {
 		return ShowTransactions(bp, trans, report.Credit, report.Hidden)
+	} else if report.Type == "Json" {
+		return ShowJsonLedger(bp, trans, false)
+	} else if report.Type == "JsonIndent" {
+		return ShowJsonLedger(bp, trans, true)
 	} else {
 		return ShowLedger(bp, trans)
 	}

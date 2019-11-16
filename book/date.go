@@ -7,61 +7,6 @@ import (
 	"time"
 )
 
-/*
-* Thinking:
-* Need a way to express:
-*   - absolute points in time that are aligned to
-*     year, quarter, month, week, day.
-*     Including: "today"
-*     Relative to a specific date
-*     Can be done cumulatively
-*   - a duration of time
-*   - go methods to find the absolute point
-*     and then do the duration-of-time-math
-*
-* Spec for absolute point in time (asof date):
-*  - absolute point:
-*     YYYYMMDD or YYYY-MM-DD or YYYY/MM/DD or YYYY.MM.DD or today   --> today is implicit
-*  - duration and alignment type:
-*     (week|day|month|quarter|year)    --> day is implicit
-*  - relative numeric is:
-*     ([+-]?[1-9][0-9]*) <duration>    --> <duration> is implicitly the alignment as well
-*  - relative textual is:
-*     (this|last|next) <alignment>   --> this is implicit.
-*
-* Or the above are separate commands.
-* Starting with 'asof' being today.
-* -> asof => absolute point
-* -> shift => shift asof in a duration
-* -> asof =>
-*
-* Implementation:
-*  -> match absolute point.
-*  -> if nothing left, just stick with that.
-*  -> If no match, pick today.
-*  -> While more left to match:
-*     -> If match number:
-*        -> Match duration or error
-*        -> Move by that number in duration
-*        -> Set alignment (current) to the duartion
-*     -> If match (this|last|next)
-*        -> Match duration or error.
-*        -> Shift to the alignment specified.
-*        -> Break loop.
-*      -> If match duration
-*        -> Shift to the alignment (as per this)
-*        -> Break loop
-*   -> After loop, expect nothing less to match. Or error.
-*
-*
-* Spec for duration (going back in time):
-* - duration:
-*     all   --> implicit
-*     ([1-9][0-9]*) <duration>
-*     <duration>           --> 1 is implicit
-*
- */
-
 // Date is a simple calendar date YYYYMMDD representated as an integer
 type Date int
 

@@ -45,6 +45,10 @@ func (app *App) NewBookPrinter(w io.Writer, decs map[string]int) *BookPrinter {
 	}
 }
 
+func (b *BookPrinter) Write(p []byte) (int, error) {
+	return b.w.Write(p)
+}
+
 // Normal Printf() but to specified io.Writier and formatting
 // numbers in a locale-specific way
 func (b *BookPrinter) Printf(format string, a ...interface{}) (n int, err error) {
@@ -123,7 +127,7 @@ func (b *BookPrinter) FormatMoney(symbol string, amount *big.Rat, maxlen int) st
 	num := b.pr.Sprintf("%s%*s", sym, l, b.FormatNumber(symbol, amount))
 	var zero big.Rat
 	if b.colour {
-		num = strings.ReplaceAll(num, "  ", " ·")
+		num = strings.ReplaceAll(num, "  ", " ÃÂÃÂ·")
 	}
 	if amount.Cmp(&zero) >= 0 {
 		return b.Blue(num)
