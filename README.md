@@ -49,3 +49,11 @@ accounts for inspection, and more.
 
 It is recommended you use the shell integration as this will use
 your configuration file to generate the shell integration.
+
+## Generating Documentation
+
+To re-generate the documentation from source run the following:
+
+     LANG= GOLEDGER_CONF=  ./goledger docs -d ./docs -t markdown
+
+
