@@ -47,7 +47,7 @@ goledger report [macros|ops...] [flags]
       --hidden string       hidden account in reports
       --splitby floorType   combine transactions by periodic date (values none, yearly, quarterly, monthly, today) (default today)
       --sum                 summarise transactions (default true)
-      --type reportType     report type (Text, Ledger) (default Ansi)
+      --type reportType     report type (Text, Ledger, Json, JsonIndent) (default Ansi)
 ```
 
 ### Options inherited from parent commands
@@ -56,7 +56,7 @@ goledger report [macros|ops...] [flags]
       --ccy string       base currency
       --colour           colour (ansi) for reports (default true)
       --divider string   divider for account components for reports (default ":")
-      --lang string      language (default "en_GB.UTF-8")
+      --lang string      language
   -l, --ledger string    ledger to read (default "main.ledger")
       --verbose          verbose
 ```

@@ -22,7 +22,7 @@ goledger ccy [flags]
       --ccy string       base currency
       --colour           colour (ansi) for reports (default true)
       --divider string   divider for account components for reports (default ":")
-      --lang string      language (default "en_GB.UTF-8")
+      --lang string      language
   -l, --ledger string    ledger to read (default "main.ledger")
       --verbose          verbose
 ```

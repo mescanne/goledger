@@ -37,6 +37,7 @@ The data structures are loaded into Python-equivalent. JSON is a series of numbe
 and dictionaries. CSV is a list of lists (no header) or list of dictdionaries (with header).
 
 There are four globals in the execution:
+
     * data. This the parsed data structure.
     * error(msg=msg). This function, if called, aborts all operation and reports the err msg.
     * print(...). This function is the same as the normal Python3 print and can be used for debugging.
@@ -49,6 +50,7 @@ Add is the method used for adding new postings:
     add(date, desc, amt, ccy=ccy, denom=denom, account=account, caccount=caccount, note=note)
 
 Parameters:
+
     * date. The date as string of the transaction. Expecting YYYY-MM-DD or YYYY/MM/DD.
     * desc. The payee or description of the transaction.
     * amt. The amount of the transaction. This can be a float, integer, or string.
@@ -57,6 +59,7 @@ Parameters:
     * account. Optional. The account for transactions (otherwise use default).
     * caccount. Optional. The counteraccount for transaction (otherwuse use default).
     * note. Optional. The transaction note.
+    * lnote. Optional. The posting note.
 
 Example CSV parsing:
     --code "[add(date=r['Date'], desc=r['Description'], amt=r['Amount']) for r in data]"
