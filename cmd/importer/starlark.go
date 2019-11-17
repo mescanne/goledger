@@ -4,34 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"github.com/mescanne/goledger/book"
+	"github.com/mescanne/goledger/cmd/utils"
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
-	"io/ioutil"
 	"math/big"
 	"os"
-	"strings"
 )
-
-const FILE_PREFIX = "file:"
-
-func getFileOrScript(sc string) (string, error) {
-	if !strings.HasPrefix(sc, FILE_PREFIX) {
-		return sc, nil
-	}
-
-	fname := sc[len(FILE_PREFIX):len(sc)]
-
-	b, err := ioutil.ReadFile(fname)
-	if err != nil {
-		return "", fmt.Errorf("reading %s: %w", fname, err)
-	}
-
-	return string(b), nil
-}
 
 func (imp *ImportDef) processData(idata starlark.Value, sc string) (*book.Book, error) {
 
-	sc, err := getFileOrScript(sc)
+	sc, err := utils.GetFileOrStr(sc)
 	if err != nil {
 		return nil, err
 	}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/mescanne/goledger/book"
 	"github.com/mescanne/goledger/cmd/app"
+	"github.com/mescanne/goledger/cmd/utils"
 	"unicode/utf8"
 )
 
@@ -83,8 +84,19 @@ func showHTMLReport(b *app.BookPrinter, posts book.Transaction) error {
 	return nil
 }
 
-func ShowHTMLTransactions(b *app.BookPrinter, trans []book.Transaction) error {
-	b.Printf("<html><head><style>\n%s\n</style></head><body>\n", styleSheet)
+func ShowHTMLTransactions(b *app.BookPrinter, trans []book.Transaction, HTMLCSS string) error {
+
+	if HTMLCSS == "" {
+		HTMLCSS = styleSheet
+	} else {
+		var err error
+		HTMLCSS, err = utils.GetFileOrStr(HTMLCSS)
+		if err != nil {
+			return err
+		}
+	}
+
+	b.Printf("<html><head><style>\n%s\n</style></head><body>\n", HTMLCSS)
 	b.Printf("<div class=\"reports\">\n")
 
 	for _, posts := range trans {
