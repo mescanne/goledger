@@ -131,17 +131,6 @@ func (rr *basicReader) parseCCY() string {
 	return buf.String()
 }
 
-func (rr *basicReader) parseInclude() string {
-	ident := rr.parseAccount()
-	if ident != "include" {
-		panic(fmt.Sprintf("Expected 'include', got %s at %c!", ident, rr.ch))
-	}
-
-	_ = rr.consumeWS()
-
-	return rr.parseToEOL()
-}
-
 func (rr *basicReader) skipLine() {
 	var buf bytes.Buffer
 	for rr.ch != eof && rr.ch != eol {
@@ -155,7 +144,7 @@ func (rr *basicReader) skipLine() {
 
 func (rr *basicReader) parsePrice(loader TransactionLoader) {
 	if rr.ch != 'P' {
-		panic(fmt.Sprintf("Expected 'P', got %v", rr.ch))
+		rr.stop("expected 'P', got '%c'", rr.ch)
 	}
 	rr.next()
 
@@ -181,6 +170,10 @@ func (rr *basicReader) parsePrice(loader TransactionLoader) {
 //
 // reterr returns the parsing error or nil if everything loaded.
 func ParseFile(loader TransactionLoader, filename string) (reterr error) {
+	return parseFileLocal(loader, filename, nil)
+}
+
+func parseFileLocal(loader TransactionLoader, filename string, alias map[string]string) (reterr error) {
 	reterr = nil
 
 	file, err := os.Open(filename)
@@ -189,17 +182,22 @@ func ParseFile(loader TransactionLoader, filename string) (reterr error) {
 	}
 	defer file.Close()
 
-	lines := 0
-
 	defer func() {
 		if msg := recover(); msg != nil {
-			reterr = fmt.Errorf("parsing failure: line %d, filename %s, error: %s", (lines - 1), filename, msg)
+			reterr = fmt.Errorf("parsing failure: %s: %s", filename, msg)
 		}
 	}()
 
+	// Create local copy
+	nmap := make(map[string]string)
+	if alias != nil {
+		for k, v := range alias {
+			nmap[k] = v
+		}
+	}
+
 	rr := newRuneReader(bufio.NewReader(file))
 	for rr.ch != eof {
-		lines++
 
 		// Move forward to first non-whitespace
 		ws := rr.consumeWS()
@@ -231,22 +229,50 @@ func ParseFile(loader TransactionLoader, filename string) (reterr error) {
 				continue
 			}
 
-			// Expect "include <filename>"
-			ifile := rr.parseInclude()
-			ParseFile(loader, filepath.Join(filepath.Dir(filename), ifile))
+			command := rr.parseIdentifier()
+
+			// If it's include
+			if command == "INCLUDE" {
+				ifile := rr.parseToEOL()
+				err := parseFileLocal(loader, filepath.Join(filepath.Dir(filename), ifile), nmap)
+				if err != nil {
+					return err
+				}
+			} else if command == "ALIAS" {
+				shortAcct := rr.parseAccount()
+				rr.consumeWS()
+				if rr.ch != '=' {
+					rr.stop("expected '=' after alias, got '%c'", rr.ch)
+				}
+				rr.next()
+				rr.consumeWS()
+				longAcct := rr.parseAccount()
+				rr.consumeWS()
+				if longAcct == "" {
+					rr.stop("expected account for alias, got empty account")
+				}
+				rr.parseToEOL()
+				nmap[shortAcct] = longAcct
+			} else {
+				rr.stop("expected include or alias")
+			}
 			continue
 		}
 
 		// indented means posting!
-		rr.parsePosting(loader)
+		rr.parsePosting(loader, nmap)
 	}
 
 	return
 }
 
-func (rr *basicReader) parsePosting(loader TransactionLoader) {
+func (rr *basicReader) parsePosting(loader TransactionLoader, alias map[string]string) {
 	_ = rr.consumeWS()
 	acct := rr.parseAccount()
+	nacct, ok := alias[acct]
+	if ok {
+		acct = nacct
+	}
 	_ = rr.consumeWS()
 	isNeg := false
 	if rr.ch == '-' {

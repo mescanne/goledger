@@ -14,6 +14,8 @@ import (
 type basicReader struct {
 	reader *bufio.Reader
 	ch     rune
+	row    int
+	col    int
 }
 
 const eof = rune(0)
@@ -22,9 +24,33 @@ const eol = rune('\n')
 func newRuneReader(r *bufio.Reader) *basicReader {
 	rr := &basicReader{
 		reader: r,
+		row:    1,
+		col:    0,
 	}
 	rr.next()
 	return rr
+}
+
+func (rr *basicReader) stop(msgf string, args ...interface{}) {
+	pos := fmt.Sprintf("%d:%d: ", rr.row, rr.col)
+	msg := fmt.Sprintf(msgf, args...)
+	panic(pos + msg)
+}
+
+func (rr *basicReader) parseIdentifier() string {
+	_ = rr.consumeWS()
+
+	var buf bytes.Buffer
+	for unicode.IsDigit(rr.ch) ||
+		unicode.IsLetter(rr.ch) ||
+		rr.ch == '_' {
+		buf.WriteRune(unicode.ToUpper(rr.ch))
+		rr.next()
+	}
+
+	rr.consumeWS()
+
+	return buf.String()
 }
 
 func (rr *basicReader) parseNumber(v *int, min int, max int) int {
@@ -37,7 +63,7 @@ func (rr *basicReader) parseNumber(v *int, min int, max int) int {
 		rr.next()
 	}
 	if chars < min || chars > max {
-		panic(fmt.Sprintf("Found %d digits, expected min of %d and max of %d.", chars, min, max))
+		rr.stop("expected number digit length of min:max of %d:%d, found %d digits", min, max, chars)
 	}
 	return retval
 }
@@ -74,7 +100,7 @@ func (rr *basicReader) consumeWS() int {
 
 func (rr *basicReader) consume(e rune) {
 	if rr.ch != e {
-		panic(fmt.Sprintf("Ah! Not expected. Got: %v, expected: %v", rr.ch, e))
+		rr.stop("expected '%c', got '%c'", e, rr.ch)
 	}
 	rr.next()
 }
@@ -87,6 +113,12 @@ func (rr *basicReader) next() rune {
 		log.Fatal(err)
 	}
 	rr.ch = r
+	if rr.ch == eol {
+		rr.row++
+		rr.col = 0
+	} else {
+		rr.col++
+	}
 	return r
 }
 

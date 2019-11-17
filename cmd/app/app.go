@@ -74,12 +74,15 @@ func (app *App) LoadCommand() *cobra.Command {
 		BashCompletionFunction: custom_func,
 		Version:                version,
 		DisableAutoGenTag:      true,
+		SilenceUsage:           true,
+		SilenceErrors:          true,
 
 		// Prior to the RunE method running, suppress any usage output
 		// if there is an error -- at this point all CLI syntax-related
 		// errors should be resolved. This is just for runtime errors.
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			cmd.SilenceUsage = true
+			cmd.SilenceErrors = true
 		},
 	}
 

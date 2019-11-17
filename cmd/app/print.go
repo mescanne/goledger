@@ -127,7 +127,7 @@ func (b *BookPrinter) FormatMoney(symbol string, amount *big.Rat, maxlen int) st
 	num := b.pr.Sprintf("%s%*s", sym, l, b.FormatNumber(symbol, amount))
 	var zero big.Rat
 	if b.colour {
-		num = strings.ReplaceAll(num, "  ", " ÃÂÃÂ·")
+		num = strings.ReplaceAll(num, "  ", " \u00B7")
 	}
 	if amount.Cmp(&zero) >= 0 {
 		return b.Blue(num)

@@ -94,7 +94,7 @@ func DumpQuickAccumBook(t *testing.T, qb []QuickAccumBook) {
 
 func ValidBook(t *testing.T, in []QuickBook, p []QuickPrice, ccy string, qb []QuickAccumBook) {
 
-	nb := GetBook(in, p).Accumulate(ccy, ":")
+	nb := GetBook(in, p).Accumulate(ccy, ":", nil, "")
 
 	Errorf := func(err string, args ...interface{}) {
 		t.Logf("Error to ccy %s: %s\n", ccy, fmt.Sprintf(err, args...))

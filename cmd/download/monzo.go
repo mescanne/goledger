@@ -157,7 +157,8 @@ func (m *MonzoDownload) NewMonzoClient(file string) (*MonzoClient, error) {
 		}
 
 		// Success, but we can't do anything until authorised on app as well.
-		return nil, fmt.Errorf("monzo must be authorised in app first -- retry after authorised")
+		fmt.Printf("Approve in Monzo app -- retry after authorised")
+		return nil, fmt.Errorf("pending authorisation")
 	}
 
 	// Refresh token if needed
@@ -215,8 +216,9 @@ func (acc *Account) MarshalJSON() ([]byte, error) {
 }
 
 type Transaction struct {
-	ID   string
-	Data interface{}
+	ID      string
+	Created string
+	Data    interface{}
 }
 
 func (t *Transaction) UnmarshalJSON(b []byte) error {
@@ -225,6 +227,9 @@ func (t *Transaction) UnmarshalJSON(b []byte) error {
 	}
 	var err error
 	if t.ID, err = utils.GetStringValue(t.Data, "id"); err != nil {
+		return err
+	}
+	if t.Created, err = utils.GetStringValue(t.Created, "created"); err != nil {
 		return err
 	}
 	return nil
@@ -283,19 +288,33 @@ func (m *MonzoClient) GetAllTransactions(accountID string) error {
 
 		fmt.Printf("downloaded %d\n", len(trans.Trans))
 
+		// Received none -- really done!
 		if len(trans.Trans) == 0 {
 			break
 		}
 
+		// Map new transactions in
+		var created time.Time
 		for _, t := range trans.Trans {
 			m.data.Transactions[t.ID] = t
+			thisTime, err := time.Parse(time.RFC3339, t.Created)
+			if err != nil {
+				return fmt.Errorf("failed parsing timestamp '%s': %w", t.Created, err)
+			}
+			if thisTime.After(created) {
+				created = thisTime
+			}
 		}
 
-		since = trans.Trans[len(trans.Trans)-1].ID
-
+		// If we didn't retrieve the full limit, we're done
 		if len(trans.Trans) < LIMIT {
 			break
 		}
+
+		// Use the the time of a minute before the most recent transaction --
+		// Bug in Monzo API, unfortunately.
+		since = created.Add(-1 * time.Second * 60).Format(time.RFC3339)
+
 	}
 
 	return nil

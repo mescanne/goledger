@@ -2,6 +2,7 @@ package book
 
 import (
 	"math/big"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -28,7 +29,6 @@ func findMaxCommonPrefix(left string, right string, divider string) string {
 }
 
 func splitByStrings(prefixes map[string]bool, acct string, includeSelf bool, divider string) (int, string) {
-	// TODO: Clean this up
 	last := 0
 	o := make([]string, 0, 5)
 	i := 0
@@ -84,20 +84,7 @@ func splitByStringsOld(prefixes map[string]bool, acct string, includeSelf bool, 
 	return o
 }
 
-// Accumulate returns transactions whose postings will have
-// interesting values in GetAccountLevel() and GetAccountTerm().
-//
-// Specifically for each posting:
-//  - If of different currency than toCCY, a parent account converted is created
-//  - Parent accounts that reflect common stems are created with totals
-//
-// GetAccountLevel() and GetAccountTerm() reflect the level in the summary tree,
-// and the final account stem.
-//
-// This function is only really useful for doing the calculations for reporting
-// purposes.
-//
-func (b *Book) Accumulate(toCCY string, divider string) []Transaction {
+func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, hidden string) []Transaction {
 
 	// only need some of compact functionality
 	b.compact()
@@ -221,6 +208,21 @@ func (b *Book) Accumulate(toCCY string, divider string) []Transaction {
 	sort.Slice(eposts, func(i, j int) bool {
 		return eposts[i].isLess(&eposts[j])
 	})
+
+	// Filter out hidden, adjust credit
+	newp := make([]Posting, 0, len(eposts))
+	for _, p := range eposts {
+		if hidden != "" && p.GetAccount() == hidden {
+			continue
+		}
+		newp = append(newp, p)
+		if credit != nil && credit.MatchString(p.GetAccount()) {
+			nval := big.NewRat(0, 1)
+			nval.Neg(p.val)
+			newp[len(newp)-1].val = nval
+		}
+	}
+	eposts = newp
 
 	// Turn into transactions
 	trans := make([]Transaction, 0, len(eposts))
