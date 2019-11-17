@@ -42,12 +42,12 @@ goledger report [macros|ops...] [flags]
 
 ```
       --convert             convert to base currency (default true)
-      --credit string       credit account regex (default "^(Income|Trading|Liability|Equity)(:.*)?$")
+      --credit string       credit account regex for summary (default "^(Income|Trading|Liability|Equity)(:.*)?$")
   -h, --help                help for report
-      --hidden string       hidden account in reports
+      --hidden string       hidden account in reports for summary
       --splitby floorType   combine transactions by periodic date (values none, yearly, quarterly, monthly, today) (default today)
       --sum                 summarise transactions (default true)
-      --type reportType     report type (Text, Ledger, Json, JsonIndent) (default Ansi)
+      --type reportType     report type (Text, Ledger, Json, JsonIndent, HTML) (default Ansi)
 ```
 
 ### Options inherited from parent commands

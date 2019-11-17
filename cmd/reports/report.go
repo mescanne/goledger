@@ -7,6 +7,7 @@ import (
 	"github.com/mescanne/goledger/cmd/utils"
 	"github.com/spf13/cobra"
 	"math/big"
+	"regexp"
 	"strings"
 	"text/template"
 )
@@ -86,12 +87,12 @@ func Add(cmd *cobra.Command, app *app.App, report *TransactionReport) {
 	// Set defaults
 	floorType := utils.NewEnum(&report.Combineby, book.FloorTypes, "floorType")
 	ncmd.Flags().Var(floorType, "splitby", fmt.Sprintf("combine transactions by periodic date (values %s)", floorType.Values()))
-	reportType := utils.NewEnum(&report.Type, []string{"Text", "Ledger", "Json", "JsonIndent"}, "reportType")
+	reportType := utils.NewEnum(&report.Type, []string{"Text", "Ledger", "Json", "JsonIndent", "HTML"}, "reportType")
 	ncmd.Flags().Var(reportType, "type", fmt.Sprintf("report type (%s)", reportType.Values()))
 	ncmd.Flags().BoolVar(&report.Sum, "sum", report.Sum, "summarise transactions")
 	ncmd.Flags().BoolVar(&report.Convert, "convert", report.Convert, "convert to base currency")
-	ncmd.Flags().StringVar(&report.Credit, "credit", report.Credit, "credit account regex")
-	ncmd.Flags().StringVar(&report.Hidden, "hidden", report.Hidden, "hidden account in reports")
+	ncmd.Flags().StringVar(&report.Credit, "credit", report.Credit, "credit account regex for summary")
+	ncmd.Flags().StringVar(&report.Hidden, "hidden", report.Hidden, "hidden account in reports for summary")
 
 	// don't need to save it
 	macroNames := make([]string, 0, len(report.Macros))
@@ -133,12 +134,20 @@ func (report *TransactionReport) run(app *app.App, cmd *cobra.Command, args []st
 		})
 	}
 
+	var creditre *regexp.Regexp = nil
+	if report.Credit != "" {
+		creditre, err = regexp.Compile(report.Credit)
+		if err != nil {
+			return fmt.Errorf("failed compiling credit accounts '%s': %w", report.Credit, err)
+		}
+	}
+
 	var trans []book.Transaction
 	if report.Sum {
 		if app.BaseCCY == "" {
 			return fmt.Errorf("unable to convert -- no CCY specified")
 		}
-		trans = b.Accumulate(app.BaseCCY, app.Divider)
+		trans = b.Accumulate(app.BaseCCY, app.Divider, creditre, report.Hidden)
 	} else {
 		trans = b.Transactions()
 	}
@@ -147,11 +156,13 @@ func (report *TransactionReport) run(app *app.App, cmd *cobra.Command, args []st
 
 	// Need type of report now..
 	if report.Type == "Text" {
-		return ShowTransactions(bp, trans, report.Credit, report.Hidden)
+		return ShowTransactions(bp, trans)
 	} else if report.Type == "Json" {
 		return ShowJsonLedger(bp, trans, false)
 	} else if report.Type == "JsonIndent" {
 		return ShowJsonLedger(bp, trans, true)
+	} else if report.Type == "HTML" {
+		return ShowHTMLTransactions(bp, trans)
 	} else {
 		return ShowLedger(bp, trans)
 	}
