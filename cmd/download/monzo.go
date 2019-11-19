@@ -157,7 +157,7 @@ func (m *MonzoDownload) NewMonzoClient(file string) (*MonzoClient, error) {
 		}
 
 		// Success, but we can't do anything until authorised on app as well.
-		fmt.Printf("Approve in Monzo app -- retry after authorised")
+		fmt.Printf("Approve in Monzo app -- retry after authorised\n")
 		return nil, fmt.Errorf("pending authorisation")
 	}
 
@@ -229,7 +229,7 @@ func (t *Transaction) UnmarshalJSON(b []byte) error {
 	if t.ID, err = utils.GetStringValue(t.Data, "id"); err != nil {
 		return err
 	}
-	if t.Created, err = utils.GetStringValue(t.Created, "created"); err != nil {
+	if t.Created, err = utils.GetStringValue(t.Data, "created"); err != nil {
 		return err
 	}
 	return nil
