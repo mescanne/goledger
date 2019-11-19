@@ -22,7 +22,7 @@ func ToJson(data interface{}) string {
 func GetStringValue(data interface{}, key string) (string, error) {
 	d, ok := data.(map[string]interface{})
 	if !ok {
-		return "", fmt.Errorf("expected JSON object, got: %s", ToJson(data))
+		return "", fmt.Errorf("for key %s expected JSON object, got: %s", key, ToJson(data))
 	}
 	id, ok := d[key]
 	if !ok {
