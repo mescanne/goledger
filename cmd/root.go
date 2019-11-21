@@ -20,7 +20,7 @@ type Config struct {
 	app.App
 	Report     reports.TransactionReport
 	Register   register.RegisterReport
-	ImportDefs map[string]importer.ImportDef
+	ImportDefs map[string]*importer.ImportDef
 	Download   download.Download
 }
 

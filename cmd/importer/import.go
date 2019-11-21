@@ -42,7 +42,7 @@ func (imp *ImportDef) run(app *app.App, rcmd *cobra.Command, args []string) erro
 	// Create the importer
 	importer, err := NewBookImporterByConfig(&imp.CLIConfig)
 	if err != nil {
-		return fmt.Errorf("invalid import configuration for '%v': %s", &imp.CLIConfig, err)
+		return fmt.Errorf("invalid import configuration for '%v': %w", &imp.CLIConfig, err)
 	}
 
 	// Get the reader
@@ -52,43 +52,46 @@ func (imp *ImportDef) run(app *app.App, rcmd *cobra.Command, args []string) erro
 		if err != nil {
 			return fmt.Errorf("error opening %s: %w", args[0], err)
 		}
+		defer r.Close()
 	}
 
 	// Load the records
 	imports, err := importer(r)
 	if err != nil {
-		return fmt.Errorf("error importing: %v", err)
+		return fmt.Errorf("error importing data: %w", err)
 	}
 
+	// Convert the records
 	b, err := imp.processData(imports, imp.Code)
 	if err != nil {
-		return err
+		return fmt.Errorf("error processing data: %w", err)
 	}
 
-	// Perform deduplication, re-classification if needed
-	if imp.Dedup || imp.Reclassify {
-		main, err := app.LoadBook()
-		if err != nil {
-			return fmt.Errorf("error loading book: %s", err)
-		}
-
-		if imp.Dedup {
-			b.RemoveDuplicatesOf(main)
-		}
-
-		if imp.Reclassify {
-			b.ReclassifyByAccount(main, imp.Account, func(a, b string) float64 {
-				d := matchr.JaroWinkler(a, b, true)
-				if d > 0.5 {
-					return d
-				} else {
-					return 0.0
-				}
-			})
-		}
+	// Load main book
+	main, err := app.LoadBook()
+	if err != nil {
+		return fmt.Errorf("error loading book: %s", err)
 	}
 
-	bp := app.NewBookPrinter(rcmd.OutOrStdout(), b.GetCCYDecimals())
+	// Deduplication if needed
+	if imp.Dedup {
+		b.RemoveDuplicatesOf(main)
+	}
+
+	// Reclassification if needed
+	if imp.Reclassify {
+		b.ReclassifyByAccount(main, imp.Account, func(a, b string) float64 {
+			d := matchr.JaroWinkler(a, b, true)
+			if d > 0.5 {
+				return d
+			} else {
+				return 0.0
+			}
+		})
+	}
+
+	// Use decimals of main book
+	bp := app.NewBookPrinter(rcmd.OutOrStdout(), main.GetCCYDecimals())
 
 	// Dump report ledger-style
 	return reports.ShowLedger(bp, b.Transactions())
@@ -127,7 +130,7 @@ func (imp *ImportDef) add(name string, app *app.App) *cobra.Command {
 	return ncmd
 }
 
-func Add(root *cobra.Command, app *app.App, config map[string]ImportDef) {
+func Add(root *cobra.Command, app *app.App, config map[string]*ImportDef) {
 
 	// Default -- where everything must be configured
 	dftl := &ImportDef{

@@ -10,9 +10,9 @@ require (
 	github.com/spf13/cobra v0.0.6-0.20191019221741-77e4d5aecc4d
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.starlark.net v0.0.0-20191113183327-aaf7be003892
-	golang.org/x/net v0.0.0-20191116160921-f9c825593386
+	golang.org/x/net v0.0.0-20191119073136-fc4aabc6c914
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/text v0.3.2
 	google.golang.org/appengine v1.6.5 // indirect
-	gopkg.in/yaml.v2 v2.2.5 // indirect
+	gopkg.in/yaml.v2 v2.2.6 // indirect
 )
