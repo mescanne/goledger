@@ -3,6 +3,7 @@ package importer
 import (
 	"fmt"
 	"github.com/antzucaro/matchr"
+	"github.com/mescanne/goledger/book"
 	"github.com/mescanne/goledger/cmd/app"
 	"github.com/mescanne/goledger/cmd/reports"
 	"github.com/mescanne/goledger/cmd/utils"
@@ -51,6 +52,9 @@ func (imp *ImportDef) run(app *app.App, rcmd *cobra.Command, args []string) erro
 		return fmt.Errorf("error loading book: %s", err)
 	}
 
+	// Track previous books
+	prevbooks := make([]*book.Book, 0, len(args))
+
 	// Iterate the import files
 	for _, arg := range args {
 
@@ -76,9 +80,14 @@ func (imp *ImportDef) run(app *app.App, rcmd *cobra.Command, args []string) erro
 			return fmt.Errorf("error processing data: %w", err)
 		}
 
-		// Deduplication if needed
+		// Deduplication if needed (including previous books)
 		if imp.Dedup {
 			b.RemoveDuplicatesOf(main)
+		}
+
+		// Always deduplicate multiple files
+		for _, prev := range prevbooks {
+			b.RemoveDuplicatesOf(prev)
 		}
 
 		// Reclassification if needed
@@ -100,6 +109,9 @@ func (imp *ImportDef) run(app *app.App, rcmd *cobra.Command, args []string) erro
 		if err := reports.ShowLedger(bp, b.Transactions()); err != nil {
 			return err
 		}
+
+		// Add to previous books
+		prevbooks = append(prevbooks, b)
 	}
 
 	return nil
