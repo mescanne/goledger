@@ -45,56 +45,64 @@ func (imp *ImportDef) run(app *app.App, rcmd *cobra.Command, args []string) erro
 		return fmt.Errorf("invalid import configuration for '%v': %w", &imp.CLIConfig, err)
 	}
 
-	// Get the reader
-	r := os.Stdin
-	if args[0] != "-" {
-		r, err = os.Open(args[0])
-		if err != nil {
-			return fmt.Errorf("error opening %s: %w", args[0], err)
-		}
-		defer r.Close()
-	}
-
-	// Load the records
-	imports, err := importer(r)
-	if err != nil {
-		return fmt.Errorf("error importing data: %w", err)
-	}
-
-	// Convert the records
-	b, err := imp.processData(imports, imp.Code)
-	if err != nil {
-		return fmt.Errorf("error processing data: %w", err)
-	}
-
 	// Load main book
 	main, err := app.LoadBook()
 	if err != nil {
 		return fmt.Errorf("error loading book: %s", err)
 	}
 
-	// Deduplication if needed
-	if imp.Dedup {
-		b.RemoveDuplicatesOf(main)
-	}
+	// Iterate the import files
+	for _, arg := range args {
 
-	// Reclassification if needed
-	if imp.Reclassify {
-		b.ReclassifyByAccount(main, imp.Account, func(a, b string) float64 {
-			d := matchr.JaroWinkler(a, b, true)
-			if d > 0.5 {
-				return d
-			} else {
-				return 0.0
+		// Get the reader
+		r := os.Stdin
+		if arg != "-" {
+			r, err = os.Open(arg)
+			if err != nil {
+				return fmt.Errorf("error opening %s: %w", arg, err)
 			}
-		})
+			defer r.Close()
+		}
+
+		// Load the records
+		imports, err := importer(r)
+		if err != nil {
+			return fmt.Errorf("error importing data: %w", err)
+		}
+
+		// Convert the records
+		b, err := imp.processData(imports, imp.Code)
+		if err != nil {
+			return fmt.Errorf("error processing data: %w", err)
+		}
+
+		// Deduplication if needed
+		if imp.Dedup {
+			b.RemoveDuplicatesOf(main)
+		}
+
+		// Reclassification if needed
+		if imp.Reclassify {
+			b.ReclassifyByAccount(main, imp.Account, func(a, b string) float64 {
+				d := matchr.JaroWinkler(a, b, true)
+				if d > 0.5 {
+					return d
+				} else {
+					return 0.0
+				}
+			})
+		}
+
+		// Use decimals of main book
+		bp := app.NewBookPrinter(rcmd.OutOrStdout(), main.GetCCYDecimals())
+
+		// Dump report ledger-style
+		if err := reports.ShowLedger(bp, b.Transactions()); err != nil {
+			return err
+		}
 	}
 
-	// Use decimals of main book
-	bp := app.NewBookPrinter(rcmd.OutOrStdout(), main.GetCCYDecimals())
-
-	// Dump report ledger-style
-	return reports.ShowLedger(bp, b.Transactions())
+	return nil
 }
 
 func (imp *ImportDef) add(name string, app *app.App) *cobra.Command {
@@ -102,7 +110,7 @@ func (imp *ImportDef) add(name string, app *app.App) *cobra.Command {
 		Use:               name,
 		Short:             imp.Description,
 		Long:              "Import transactions",
-		Args:              cobra.ExactArgs(1),
+		Args:              cobra.MinimumNArgs(1),
 		DisableAutoGenTag: true,
 	}
 	ncmd.Flags().BoolVarP(&imp.Dedup, "dedup", "d", imp.Dedup, "deduplicate transactions based on payee and date")

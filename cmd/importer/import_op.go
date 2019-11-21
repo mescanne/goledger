@@ -201,11 +201,11 @@ func NewCSVBookImporter(cfg *utils.CLIConfig) (BookImporter, error) {
 				}
 				nrecs[i] = ndict
 			} else {
-				narr := starlark.NewList(make([]starlark.Value, len(recs)))
+				narr := make([]starlark.Value, len(rec))
 				for j, v := range rec {
-					narr.SetIndex(j, starlark.String(v))
+					narr[j] = starlark.String(v)
 				}
-				nrecs[i] = narr
+				nrecs[i] = starlark.NewList(narr)
 			}
 		}
 
