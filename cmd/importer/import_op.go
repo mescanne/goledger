@@ -7,7 +7,6 @@ import (
 	"github.com/mescanne/goledger/cmd/utils"
 	"go.starlark.net/starlark"
 	"io"
-	"strings"
 )
 
 type BookImporter func(r io.Reader) (starlark.Value, error)
@@ -184,10 +183,6 @@ func NewCSVBookImporter(cfg *utils.CLIConfig) (BookImporter, error) {
 				return nil, fmt.Errorf("csv headers: %w", err)
 			}
 		}
-
-		// Check for BOM
-		BOM := string([]byte{239, 187, 191}) // UTF-8 specific
-		hdr[0] = strings.TrimPrefix(hdr[0], BOM)
 
 		recs, err := csvr.ReadAll()
 		if err != nil {
