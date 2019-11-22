@@ -18,6 +18,7 @@ type Posting struct {
 	// New account levels:
 	acctlevel int    // default 0 - no indentation
 	acctterm  string // default - same as acct, otherwise term part
+	acctsort  string // default "" - sort order for accumulation (intra-transaction)
 }
 
 func (p Posting) GetTransactionNote() string { return p.tnote }
@@ -59,6 +60,13 @@ func (p Posting) isLess(r *Posting) bool {
 	//
 	// Posting-level sorting
 	//
+
+	if p.acctsort < r.acctsort {
+		return true
+	} else if p.acctsort > r.acctsort {
+		return false
+	}
+
 	if p.acct < r.acct {
 		return true
 	} else if p.acct > r.acct {

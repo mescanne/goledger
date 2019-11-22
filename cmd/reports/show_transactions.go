@@ -5,6 +5,7 @@ import (
 	"github.com/mescanne/goledger/book"
 	"github.com/mescanne/goledger/cmd/app"
 	"github.com/mescanne/goledger/cmd/utils"
+	"math/big"
 	"unicode/utf8"
 )
 
@@ -63,6 +64,7 @@ func showHTMLReport(b *app.BookPrinter, posts book.Transaction) error {
 	//
 	b.Printf("<div class=\"posts\">\n")
 	lastLevel := 0
+	zero := &big.Rat{}
 	for _, v := range posts {
 		thisLevel := v.GetAccountLevel()
 		diff := "sameindent"
@@ -72,9 +74,15 @@ func showHTMLReport(b *app.BookPrinter, posts book.Transaction) error {
 			diff = "lessindent"
 		}
 
+		amt := v.GetAmount()
+		sign := "neg"
+		if amt.Cmp(zero) >= 0 {
+			sign = "pos"
+		}
+
 		b.Printf("  <div class=\"post indent%d %s\">", thisLevel, diff)
 		b.Printf("    <div class=\"account\">%s</div>\n", v.GetAccountTerm())
-		b.Printf("    <div class=\"amount\">%s%s</div>\n", b.FormatSymbol(v.GetCCY()), b.FormatNumber(v.GetCCY(), v.GetAmount()))
+		b.Printf("    <div class=\"amount %s\">%s%s</div>\n", sign, b.FormatSymbol(v.GetCCY()), b.FormatNumber(v.GetCCY(), amt))
 		b.Printf("  </div>\n")
 
 		lastLevel = thisLevel

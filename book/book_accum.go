@@ -1,6 +1,7 @@
 package book
 
 import (
+	"fmt"
 	"math/big"
 	"regexp"
 	"sort"
@@ -26,6 +27,26 @@ func findMaxCommonPrefix(left string, right string, divider string) string {
 	}
 
 	return left[0:prefix]
+}
+
+func getSortOrder(a *big.Rat) string {
+	f, _ := a.Float64()
+	g := int(f * 1000_000)
+	g = 1_000_000_000*1_000_000 - g
+	return fmt.Sprintf("%015x", g)
+}
+
+func getSortOrderString(val map[string]*big.Rat, acct string, divider string) string {
+	o := make([]string, 0, 5)
+	for i := 1; i <= len(acct); i++ {
+		if i != len(acct) && !strings.HasPrefix(acct[i:], divider) {
+			continue
+		}
+		if v, ok := val[acct[:i]]; ok {
+			o = append(o, getSortOrder(v))
+		}
+	}
+	return strings.Join(o, divider)
 }
 
 func splitByStrings(prefixes map[string]bool, acct string, includeSelf bool, divider string) (int, string) {
@@ -54,34 +75,6 @@ func splitByStrings(prefixes map[string]bool, acct string, includeSelf bool, div
 	}
 	o = append(o, acct[last:])
 	return len(o) - 1, acct[last:]
-}
-
-func splitByStringsOld(prefixes map[string]bool, acct string, includeSelf bool, divider string) []string {
-	last := 0
-	o := make([]string, 0, 5)
-	i := 0
-	for {
-		if i == len(acct) {
-			if includeSelf {
-				if _, ok := prefixes[acct]; ok {
-					o = append(o, acct[last:])
-					last = i
-				}
-			}
-			break
-		}
-
-		if strings.HasPrefix(acct[i:], divider) {
-			if _, ok := prefixes[acct[:i]]; ok {
-				o = append(o, acct[last:i])
-				last = i + len(divider)
-			}
-		}
-
-		i++
-	}
-	o = append(o, acct[last:])
-	return o
 }
 
 func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, hidden string) []Transaction {
@@ -115,19 +108,15 @@ func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, h
 		// If this is different than previous, accumulate
 		if i == len(posts) || posts[i].date != posts[transIdx].date || posts[i].payee != posts[transIdx].payee {
 
-			// Assign level to normal postings
-			for j := transIdx; j < i; j++ {
-				//eposts[j].acctlevels = splitByStringsOld(accum, eposts[j].acct, true, divider)
-				eposts[j].acctlevel, eposts[j].acctterm = splitByStrings(accum, eposts[j].acct, true, divider)
+			acctval := make(map[string]*big.Rat)
+
+			// Get values of converted accounts
+			for _, cpost := range cposts {
+				acctval[cpost.acct] = cpost.val
 			}
-			// Calculate new postings
+
+			// Accumulate value across converted postings
 			for k, _ := range accum {
-
-				// Find the level
-				//newparts := splitByStringsOld(accum, k, false, divider)
-				newlevels, newterm := splitByStrings(accum, k, false, divider)
-
-				// Accumulate across postings
 				lkey := k + divider
 				v := big.NewRat(0, 1)
 				for _, cpost := range cposts {
@@ -137,19 +126,36 @@ func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, h
 					v.Add(v, cpost.val)
 				}
 
+				// Get acct balance
+				acctval[k] = v
+			}
+
+			// Assign level to normal postings
+			for j := transIdx; j < i; j++ {
+				eposts[j].acctlevel, eposts[j].acctterm = splitByStrings(accum, eposts[j].acct, true, divider)
+				eposts[j].acctsort = getSortOrderString(acctval, eposts[j].acct, divider)
+			}
+
+			// Create new postings
+			for k, _ := range accum {
+
+				// Find the level
+				newlevels, newterm := splitByStrings(accum, k, false, divider)
+				newsort := getSortOrderString(acctval, k, divider)
+
 				// Add new posting
 				sposts = append(sposts, Posting{
-					date:  posts[transIdx].date,
-					payee: posts[transIdx].payee,
-					tnote: posts[transIdx].tnote,
-					acct:  k,
-					ccy:   toCCY,
-					val:   v,
-					note:  "",
-					bal:   big.NewRat(0, 1),
-					//acctlevels: newparts,
+					date:      posts[transIdx].date,
+					payee:     posts[transIdx].payee,
+					tnote:     posts[transIdx].tnote,
+					acct:      k,
+					ccy:       toCCY,
+					val:       acctval[k],
+					note:      "",
+					bal:       big.NewRat(0, 1),
 					acctlevel: newlevels,
 					acctterm:  newterm,
+					acctsort:  newsort,
 				})
 			}
 
@@ -165,14 +171,20 @@ func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, h
 			break
 		}
 
+		// Take a copy of the posts
 		p := posts[i]
 
-		// Create new accumulated posting
-		npost := p
+		// Adjust credit if needed
+		if credit != nil && credit.MatchString(p.GetAccount()) {
+			nval := big.NewRat(0, 1)
+			nval.Neg(p.val)
+			p.val = nval
+		}
 
 		// Add to the posts
-		eposts = append(eposts, npost)
+		eposts = append(eposts, p)
 
+		// Create new converted posting for accumulation
 		ncpost := PostKey{
 			acct: p.acct,
 			val:  p.val,
@@ -192,7 +204,7 @@ func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, h
 		// If not the first posting in the transaction...
 		// ... check if there's an accumulation point
 		if i != transIdx {
-			key := findMaxCommonPrefix(eposts[i-1].acct, npost.acct, divider)
+			key := findMaxCommonPrefix(eposts[i-1].acct, p.acct, divider)
 			if key != "" {
 				accum[key] = true
 			}
@@ -216,11 +228,6 @@ func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, h
 			continue
 		}
 		newp = append(newp, p)
-		if credit != nil && credit.MatchString(p.GetAccount()) {
-			nval := big.NewRat(0, 1)
-			nval.Neg(p.val)
-			newp[len(newp)-1].val = nval
-		}
 	}
 	eposts = newp
 
