@@ -77,7 +77,7 @@ func (date Date) FloorQuarter(diff int) Date {
 
 var dateYYYYMMDD = regexp.MustCompile("^([0-9][0-9][0-9][0-9])[-/]]?([0-9][0-9])[-/]?([0-9][0-9])$")
 var dateDDMMYYYY = regexp.MustCompile("^([0-9][0-9])[-/]]?([0-9][0-9])[-/]?([0-9][0-9][0-9][0-9])$")
-var date_desc_re = regexp.MustCompile("^(this|last|next) +(month|year|quarter)$")
+var date_desc_re = regexp.MustCompile("^(this|last|next)[\\._ \t]+(month|year|quarter)$")
 
 func (date *Date) Set(value string) error {
 	*date = DateFromString(value)
