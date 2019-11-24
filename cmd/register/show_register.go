@@ -1,10 +1,10 @@
 package register
 
 import (
-	"fmt"
 	"github.com/mescanne/goledger/book"
 	"github.com/mescanne/goledger/cmd/app"
 	"strings"
+	"unicode/utf8"
 )
 
 func ShowRegister(b *app.BookPrinter, inb []book.Transaction, acct string, asc bool) error {
@@ -13,6 +13,13 @@ func ShowRegister(b *app.BookPrinter, inb []book.Transaction, acct string, asc b
 	caccts := make([]string, 0, 10)
 	amt := make([]string, 0, 10)
 	bal := make([]string, 0, 10)
+
+	// Header
+	dates = append(dates, b.Ansi(app.BlackUL, "Date"))
+	payees = append(payees, b.Ansi(app.BlackUL, "Payee"))
+	caccts = append(caccts, b.Ansi(app.BlackUL, "Counteraccount"))
+	amt = append(amt, b.Ansi(app.BlackUL, "Amount"))
+	bal = append(bal, b.Ansi(app.BlackUL, "Balance"))
 
 	for _, trans := range inb {
 
@@ -31,88 +38,47 @@ func ShowRegister(b *app.BookPrinter, inb []book.Transaction, acct string, asc b
 			if p.GetAccount() != acct {
 				continue
 			}
-			dates = append(dates, trans.GetDate().String())
-			payees = append(payees, trans.GetPayee())
-			caccts = append(caccts, cacct)
+			dates = append(dates, b.Ansi(app.Black, trans.GetDate().String()))
+			payees = append(payees, b.Ansi(app.Black, trans.GetPayee()))
+			caccts = append(caccts, b.Ansi(app.Black, cacct))
 			amt = append(amt, b.FormatSimpleMoney(p.GetCCY(), p.GetAmount()))
 			bal = append(bal, b.FormatSimpleMoney(p.GetCCY(), p.GetBalance()))
 		}
 	}
 
-	payees = formatStrings(payees, 100, true)
-	caccts = formatStrings(caccts, 100, true)
-	amt = formatStrings(amt, 100, false)
-	bal = formatStrings(bal, 100, false)
+	ldate := app.ListLength(dates, 100)
+	lpayees := app.ListLength(payees, 100)
+	lcaccts := app.ListLength(caccts, 100)
+	lamt := app.ListLength(amt, 100)
+	lbal := app.ListLength(bal, 100)
 
-	return writeStrings(b, asc, dates, payees, caccts, amt, bal)
-}
-
-func writeStrings(b *app.BookPrinter, asc bool, icols ...[]string) error {
-
-	if len(icols) == 0 {
-		return fmt.Errorf("invalid - no columns to write")
-	}
-
-	cols := len(icols)
-	rows := len(icols[0])
-
-	for _, c := range icols[1:] {
-		if len(c) != rows {
-			return fmt.Errorf("invalid - columns of different row size - %d vs %d", len(c), rows)
+	for i := range dates {
+		idx := i
+		if !asc {
+			idx = len(dates) - i - 1
 		}
-	}
+		b.Printf("%-*.*s %-*.*s %-*.*s  %*.*s  %*.*s\n",
+			ldate, ldate, dates[idx],
+			lpayees, lpayees, payees[idx],
+			lcaccts, lcaccts, caccts[idx],
+			lamt, lamt, amt[idx],
+			lbal, lbal, bal[idx])
 
-	i := 0
-	if !asc {
-		i = rows - 1
-	}
-	for {
-		for c, col := range icols {
-			b.Printf("%s", col[i])
-			if c < (cols - 1) {
-				b.Printf(" ")
-			} else {
-				b.Printf("\n")
-			}
-		}
-
-		if asc {
-			i++
-			if i >= rows {
-				break
-			}
-		} else {
-			i--
-			if i < 0 {
-				break
-			}
-		}
 	}
 
 	return nil
 }
 
-func formatStrings(strs []string, maxLen int, isLeft bool) []string {
+func maxLength(strs []string, maxlen int) int {
 	l := 0
 	for _, s := range strs {
-		ls := len(s)
+		ls := utf8.RuneCountInString(s)
 		if ls > l {
 			l = ls
+			if l > maxlen {
+				return maxlen
+			}
 		}
 	}
-
-	if l > maxLen && maxLen > 0 {
-		l = maxLen
-	}
-
-	ostrs := make([]string, len(strs))
-	for i, s := range strs {
-		if isLeft {
-			ostrs[i] = fmt.Sprintf("%-*.*s", l, l, s)
-		} else {
-			ostrs[i] = fmt.Sprintf("%*.*s", l, l, s)
-		}
-	}
-
-	return ostrs
+	return l
 }

@@ -5,8 +5,6 @@ import (
 	"sort"
 )
 
-// TODO: Use append rather than targetIdx. Far simpler.
-
 func (b *Book) compact() {
 
 	// Skip empty
@@ -35,11 +33,6 @@ func (b *Book) compact() {
 			p[targetIdx].val.Add(p[targetIdx].val, p[i].val)
 
 		} else {
-
-			// TODO: Incorporate zero-check here.
-			// TODO: Incorporate tracking position of transactions here as well.
-			//       This will allow us to track everything and iterate in a much
-			//       more elegant way.
 
 			// Otherwise start up a target.
 			targetIdx++
@@ -96,9 +89,6 @@ func (b *Book) compact() {
 		}
 		i++
 	}
-
-	// Shrink transactions (if needed)
-	//b.trans = b.trans[:targetIdx]
 
 	// Calculate balance
 	amts := make(map[[2]string]*big.Rat)

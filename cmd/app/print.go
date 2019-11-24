@@ -84,39 +84,10 @@ func (b *BookPrinter) FormatSimpleMoney(symbol string, amount *big.Rat) string {
 	num := b.FormatSymbol(symbol) + b.FormatNumber(symbol, amount)
 	var zero big.Rat
 	if amount.Cmp(&zero) >= 0 {
-		return b.Blue(num)
+		return b.Ansi(Blue, num)
 	} else {
-		return b.Red(num)
+		return b.Ansi(Red, num)
 	}
-}
-
-// Whether Colour is enabled or not
-func (b *BookPrinter) Colour() bool {
-	return b.colour
-}
-
-// Highlight the string as blue (if colour is enabled)
-func (b *BookPrinter) Blue(i string) string {
-	if !b.colour {
-		return i
-	}
-	return __AnsiBlue + i + __AnsiReset
-}
-
-// Highlight the string as red (if colour is enabled)
-func (b *BookPrinter) Red(i string) string {
-	if !b.colour {
-		return i
-	}
-	return __AnsiRed + i + __AnsiReset
-}
-
-// Highlight the string as blue underline (if colour is enabled)
-func (b *BookPrinter) BlueUL(i string) string {
-	if !b.colour {
-		return i
-	}
-	return __AnsiBlueUL + i + __AnsiReset
 }
 
 // Format the number (with colour if enabled) to a maximum length
@@ -130,13 +101,40 @@ func (b *BookPrinter) FormatMoney(symbol string, amount *big.Rat, maxlen int) st
 		num = strings.ReplaceAll(num, "  ", " \u00B7")
 	}
 	if amount.Cmp(&zero) >= 0 {
-		return b.Blue(num)
+		return b.Ansi(Blue, num)
 	} else {
-		return b.Red(num)
+		return b.Ansi(Red, num)
 	}
 }
 
-const __AnsiReset = "\033[0m"
-const __AnsiBlue = "\033[34m"
-const __AnsiRed = "\033[31m"
-const __AnsiBlueUL = "\033[4;34m"
+func Length(s string) int {
+	return utf8.RuneCountInString(s)
+}
+
+func ListLength(strs []string, max int) (l int) {
+	for _, s := range strs {
+		ls := Length(s)
+		if ls >= max {
+			return max
+		}
+		if ls > l {
+			l = ls
+		}
+	}
+	return
+}
+
+func (b *BookPrinter) Ansi(c AnsiColour, i string) string {
+	if !b.colour {
+		return i
+	}
+	return string(c) + i + "\033[0m"
+}
+
+type AnsiColour string
+
+const Blue AnsiColour = "\033[0;34m"
+const Red AnsiColour = "\033[0;31m"
+const BlueUL AnsiColour = "\033[4;34m"
+const BlackUL AnsiColour = "\033[4;30m"
+const Black AnsiColour = "\033[0;30m"

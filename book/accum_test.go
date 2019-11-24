@@ -165,12 +165,12 @@ func TestAccum(t *testing.T) {
 		"ccy",
 		[]QuickAccumBook{
 			QuickAccumBook{"2010-10-01", "rand", []QuickAccumPosting{
-				QuickAccumPosting{"Expense:C", "ccy", -300, []string{"Expense:C"}},
 				QuickAccumPosting{"Income", "ccy", 300, []string{"Income"}},
-				QuickAccumPosting{"Income:C", "ccy", 100, []string{"Income", "C"}},
 				QuickAccumPosting{"Income:T1", "ccy", 200, []string{"Income", "T1"}},
 				QuickAccumPosting{"Income:T1:A", "ccy", 100, []string{"Income", "T1", "A"}},
 				QuickAccumPosting{"Income:T1:B", "ccy", 100, []string{"Income", "T1", "B"}},
+				QuickAccumPosting{"Income:C", "ccy", 100, []string{"Income", "C"}},
+				QuickAccumPosting{"Expense:C", "ccy", -300, []string{"Expense:C"}},
 			}},
 		},
 	)
@@ -201,28 +201,28 @@ func TestAccum(t *testing.T) {
 		"ccy",
 		[]QuickAccumBook{
 			QuickAccumBook{"2010-10-01", "rand", []QuickAccumPosting{
-				QuickAccumPosting{"Expense:C", "ccy", -300, []string{"Expense:C"}},
 				QuickAccumPosting{"Income", "ccy", 300, []string{"Income"}},
-				QuickAccumPosting{"Income:C", "ccy", 100, []string{"Income", "C"}},
 				QuickAccumPosting{"Income:T1", "ccy", 200, []string{"Income", "T1"}},
 				QuickAccumPosting{"Income:T1:A", "ccy", 100, []string{"Income", "T1", "A"}},
 				QuickAccumPosting{"Income:T1:B", "ccy", 100, []string{"Income", "T1", "B"}},
+				QuickAccumPosting{"Income:C", "ccy", 100, []string{"Income", "C"}},
+				QuickAccumPosting{"Expense:C", "ccy", -300, []string{"Expense:C"}},
 			}},
 			QuickAccumBook{"2010-10-02", "rand", []QuickAccumPosting{
-				QuickAccumPosting{"Expense:C", "ccy", -300, []string{"Expense:C"}},
 				QuickAccumPosting{"Income", "ccy", 300, []string{"Income"}},
-				QuickAccumPosting{"Income:C", "ccy", 100, []string{"Income", "C"}},
 				QuickAccumPosting{"Income:T1", "ccy", 200, []string{"Income", "T1"}},
 				QuickAccumPosting{"Income:T1:A", "ccy", 100, []string{"Income", "T1", "A"}},
 				QuickAccumPosting{"Income:T1:B", "ccy", 100, []string{"Income", "T1", "B"}},
+				QuickAccumPosting{"Income:C", "ccy", 100, []string{"Income", "C"}},
+				QuickAccumPosting{"Expense:C", "ccy", -300, []string{"Expense:C"}},
 			}},
 			QuickAccumBook{"2010-10-02", "rand2", []QuickAccumPosting{
-				QuickAccumPosting{"Expense:C", "ccy", -300, []string{"Expense:C"}},
 				QuickAccumPosting{"Income", "ccy", 300, []string{"Income"}},
-				QuickAccumPosting{"Income:C", "ccy", 100, []string{"Income", "C"}},
 				QuickAccumPosting{"Income:T1", "ccy", 200, []string{"Income", "T1"}},
 				QuickAccumPosting{"Income:T1:A", "ccy", 100, []string{"Income", "T1", "A"}},
 				QuickAccumPosting{"Income:T1:B", "ccy", 100, []string{"Income", "T1", "B"}},
+				QuickAccumPosting{"Income:C", "ccy", 100, []string{"Income", "C"}},
+				QuickAccumPosting{"Expense:C", "ccy", -300, []string{"Expense:C"}},
 			}},
 		},
 	)
@@ -246,12 +246,12 @@ func TestAccumCCY(t *testing.T) {
 		"ccy",
 		[]QuickAccumBook{
 			QuickAccumBook{"2010-10-01", "rand", []QuickAccumPosting{
-				QuickAccumPosting{"Expense:C", "ccy", -300, []string{"Expense:C"}},
-				QuickAccumPosting{"Expense:C", "ccy1", -100, []string{"Expense:C", ""}},
-				QuickAccumPosting{"Expense:C", "ccy2", -100, []string{"Expense:C", ""}},
 				QuickAccumPosting{"Income:T1:A", "ccy", 300, []string{"Income:T1:A"}},
 				QuickAccumPosting{"Income:T1:A", "ccy1", 100, []string{"Income:T1:A", ""}},
 				QuickAccumPosting{"Income:T1:A", "ccy2", 100, []string{"Income:T1:A", ""}},
+				QuickAccumPosting{"Expense:C", "ccy", -300, []string{"Expense:C"}},
+				QuickAccumPosting{"Expense:C", "ccy1", -100, []string{"Expense:C", ""}},
+				QuickAccumPosting{"Expense:C", "ccy2", -100, []string{"Expense:C", ""}},
 			}},
 		},
 	)
@@ -273,10 +273,10 @@ func TestAccumCCYSimple(t *testing.T) {
 		"ccy1",
 		[]QuickAccumBook{
 			QuickAccumBook{"2010-10-01", "rand", []QuickAccumPosting{
-				QuickAccumPosting{"Expense:C", "ccy1", -200, []string{"Expense:C"}},
-				QuickAccumPosting{"Expense:C", "ccy2", -100, []string{"Expense:C", ""}},
 				QuickAccumPosting{"Income:T1:A", "ccy1", 200, []string{"Income:T1:A"}},
 				QuickAccumPosting{"Income:T1:A", "ccy2", 100, []string{"Income:T1:A", ""}},
+				QuickAccumPosting{"Expense:C", "ccy1", -200, []string{"Expense:C"}},
+				QuickAccumPosting{"Expense:C", "ccy2", -100, []string{"Expense:C", ""}},
 			}},
 		},
 	)
@@ -297,12 +297,12 @@ func TestSimple(t *testing.T) {
 		"ccy1",
 		[]QuickAccumBook{
 			QuickAccumBook{"2010-10-01", "rand", []QuickAccumPosting{
-				QuickAccumPosting{"Equity", "ccy1", -50, []string{"Equity"}},
-				QuickAccumPosting{"Mortgage", "ccy1", -100, []string{"Mortgage"}},
 				QuickAccumPosting{"Savings", "ccy1", 150, []string{"Savings"}},
 				QuickAccumPosting{"Savings:A", "ccy1", 50, []string{"Savings", "A"}},
 				QuickAccumPosting{"Savings:B", "ccy1", 50, []string{"Savings", "B"}},
 				QuickAccumPosting{"Savings:C", "ccy1", 50, []string{"Savings", "C"}},
+				QuickAccumPosting{"Equity", "ccy1", -50, []string{"Equity"}},
+				QuickAccumPosting{"Mortgage", "ccy1", -100, []string{"Mortgage"}},
 			}},
 		},
 	)
@@ -324,10 +324,10 @@ func TestTermNonTermMix(t *testing.T) {
 		"ccy1",
 		[]QuickAccumBook{
 			QuickAccumBook{"2010-10-01", "rand", []QuickAccumPosting{
-				QuickAccumPosting{"Expense:C", "ccy1", -200, []string{"Expense:C"}},
 				QuickAccumPosting{"Income:T1", "ccy1", 200, []string{"Income:T1"}},
 				QuickAccumPosting{"Income:T1", "ccy1", 100, []string{"Income:T1", ""}},
 				QuickAccumPosting{"Income:T1:A", "ccy1", 100, []string{"Income:T1", "A"}},
+				QuickAccumPosting{"Expense:C", "ccy1", -200, []string{"Expense:C"}},
 			}},
 		},
 	)

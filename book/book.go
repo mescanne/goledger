@@ -141,7 +141,7 @@ func (b *Book) Accounts(reg string) []string {
 			accts = append(accts, acct)
 		}
 	}
-	sort.Sort(sort.StringSlice(accts))
+	sort.Strings(accts)
 	return accts
 }
 

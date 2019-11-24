@@ -48,10 +48,10 @@ func Add(cmd *cobra.Command, app *app.App, reg *RegisterReport) {
 	cmd.AddCommand(ncmd)
 }
 
-func (reg *RegisterReport) run(app *app.App, cmd *cobra.Command, args []string) error {
+func (reg *RegisterReport) run(rapp *app.App, cmd *cobra.Command, args []string) error {
 
 	// Load up saved flags
-	b, err := app.LoadBook()
+	b, err := rapp.LoadBook()
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func (reg *RegisterReport) run(app *app.App, cmd *cobra.Command, args []string) 
 	b.FilterByDateSince(book.DateFromString(reg.BeginDate))
 	b.FilterByDateAsof(book.DateFromString(reg.EndDate))
 
-	bp := app.NewBookPrinter(cmd.OutOrStdout(), b.GetCCYDecimals())
+	bp := rapp.NewBookPrinter(cmd.OutOrStdout(), b.GetCCYDecimals())
 
 	// Show all matching accounts
 	for _, arg := range args {
@@ -77,7 +77,7 @@ func (reg *RegisterReport) run(app *app.App, cmd *cobra.Command, args []string) 
 				trans = trans[len(trans)+reg.Count : len(trans)]
 			}
 
-			bp.Printf("\n%s\n", bp.BlueUL(acct))
+			bp.Printf("\n%s\n", bp.Ansi(app.BlueUL, acct))
 			if err := ShowRegister(bp, trans, acct, reg.Asc); err != nil {
 				return err
 			}
