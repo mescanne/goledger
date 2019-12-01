@@ -28,6 +28,7 @@ type App struct {
 	Verbose bool   // Verbose modw
 	Divider string // Default (normally ":")
 	Colour  bool   // Use Ansi Colour
+	All     bool   // Use all accounts, rather than just accounts with a non-zero balance
 	Lang    string // Language for formatting
 }
 
@@ -38,6 +39,7 @@ var DefaultApp App = App{
 	Lang:    "en",
 	Divider: ":",
 	Colour:  true,
+	All:     false,
 }
 
 func init() {
@@ -92,6 +94,7 @@ func (app *App) LoadCommand() *cobra.Command {
 	appCmd.PersistentFlags().StringVar(&app.Lang, "lang", app.Lang, "language")
 	appCmd.PersistentFlags().BoolVar(&app.Verbose, "verbose", app.Verbose, "verbose")
 	appCmd.PersistentFlags().BoolVar(&app.Colour, "colour", app.Colour, "colour (ansi) for reports")
+	appCmd.PersistentFlags().BoolVar(&app.All, "all", app.All, "all accounts, not just non-zero balance")
 
 	appCmd.InitDefaultHelpCmd()
 	appCmd.InitDefaultHelpFlag()

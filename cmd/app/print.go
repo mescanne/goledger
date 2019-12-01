@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
@@ -122,6 +123,32 @@ func ListLength(strs []string, max int) (l int) {
 		}
 	}
 	return
+}
+
+// Combine multiple columns into one.
+// Single list length. Right-justified. Space-separated.
+func Combine(strs [][]string, max int) ([]string, error) {
+
+	// Calculate width of each column
+	lamts := make([]int, len(strs))
+	for i, str := range strs {
+		lamts[i] = ListLength(str, max)
+		if len(str) != len(strs[0]) {
+			return nil, fmt.Errorf("internal error: inconsistent string lengths")
+		}
+	}
+
+	// New column
+	ncol := make([]string, len(strs[0]))
+	buf := make([]string, len(strs))
+	for i := range ncol {
+		for j := range strs {
+			buf[j] = fmt.Sprintf("%*.*s", lamts[j], lamts[j], strs[j][i])
+		}
+		ncol[i] = strings.Join(buf, " ")
+	}
+
+	return ncol, nil
 }
 
 func (b *BookPrinter) Ansi(c AnsiColour, i string) string {

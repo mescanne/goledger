@@ -3,6 +3,7 @@ package book
 import (
 	"fmt"
 	"math/big"
+	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -77,9 +78,90 @@ func splitByStrings(prefixes map[string]bool, acct string, includeSelf bool, div
 	return len(o) - 1, acct[last:]
 }
 
-func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, hidden string) []Transaction {
+func addEmptyAccounts(posts []Posting) []Posting {
 
-	// only need some of compact functionality
+	type AccountType struct {
+		acct string
+		ccy  string
+	}
+	accts := make(map[AccountType]bool)
+	acctList := make([]AccountType, 0, len(posts))
+	for _, p := range posts {
+		idx := AccountType{p.GetAccount(), p.GetCCY()}
+		_, ok := accts[idx]
+		if ok {
+			continue
+		}
+		acctList = append(acctList, idx)
+		accts[idx] = true
+	}
+
+	sort.Slice(acctList, func(i, j int) bool {
+		if acctList[i].acct < acctList[j].acct {
+			return true
+		} else if acctList[i].acct > acctList[j].acct {
+			return false
+		}
+
+		if acctList[i].ccy < acctList[j].ccy {
+			return true
+		}
+		return false
+	})
+
+	scanIdx := 0
+	transIdx := 0
+	postEnd := len(posts)
+	postIdx := 0
+	for {
+		if postIdx == postEnd {
+			break
+		}
+
+		// Check if need a new transaction
+		// If this is different than previous, accumulate
+		if postIdx > transIdx && (posts[postIdx].date != posts[transIdx].date || posts[postIdx].payee != posts[transIdx].payee) {
+			transIdx = postIdx
+			scanIdx = 0
+		}
+
+		if (scanIdx == len(acctList)) ||
+			(acctList[scanIdx].acct > posts[postIdx].GetAccount()) ||
+			(acctList[scanIdx].acct == posts[postIdx].GetAccount() && acctList[scanIdx].ccy > posts[postIdx].ccy) {
+			panic("FATAL ERROR")
+		}
+
+		if acctList[scanIdx].acct == posts[postIdx].GetAccount() && acctList[scanIdx].ccy == posts[postIdx].ccy {
+			postIdx++
+		} else {
+			posts = append(posts, Posting{
+				date:  posts[transIdx].date,
+				payee: posts[transIdx].payee,
+				tnote: posts[transIdx].tnote,
+				acct:  acctList[scanIdx].acct,
+				ccy:   acctList[scanIdx].ccy,
+				val:   big.NewRat(0, 1),
+				note:  "",
+				bal:   big.NewRat(0, 1),
+			})
+		}
+
+		scanIdx++
+	}
+
+	// Sort
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].isLess(&posts[j])
+	})
+
+	return posts
+}
+
+func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, hidden string) []Transaction {
+	// TODO: This needs simplifying, with some of the functionality brought out into separate layers.
+	//       There is too much in one function.
+
+	// Only need some of compact functionality
 	b.compact()
 
 	posts := b.post
@@ -87,6 +169,9 @@ func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, h
 	if len(posts) == 0 {
 		return b.Transactions()
 	}
+
+	// Add empty accounts
+	posts = addEmptyAccounts(posts)
 
 	// Accumulated Postings.
 	eposts := make([]Posting, 0, len(posts)) // Existing Terminal
@@ -99,8 +184,27 @@ func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, h
 	}
 	cposts := make([]PostKey, 0, len(posts))
 
-	// Accumulated -- converted currency only
+	// Find accounts that need to be accumulated
+	// -- need to be the same across all transactions
 	accum := make(map[string]bool)
+	for i, p := range posts {
+		if p.ccy != toCCY {
+			accum[p.GetAccount()] = true
+		}
+
+		if i == 0 {
+			continue
+		}
+
+		if key := findMaxCommonPrefix(posts[i-1].GetAccount(), p.GetAccount(), divider); key != "" {
+			if posts[i-1].GetCCY() == p.GetCCY() &&
+				(posts[i-1].GetAccount() == key || p.GetAccount() == key) {
+				//return nil, fmt.Errorf("cannot accumulate account '%s' (%s) and '%s' (%s)", p.GetAccount(), p.GetCCY(), posts[i-1].GetAccount(), posts[i-1].GetCCY())
+				fmt.Fprintf(os.Stderr, "WARNING: account '%s' (%s) and '%s' (%s) both have balances\n", p.GetAccount(), p.GetCCY(), posts[i-1].GetAccount(), posts[i-1].GetCCY())
+			}
+			accum[key] = true
+		}
+	}
 
 	transIdx := 0
 	i := 0
@@ -160,7 +264,6 @@ func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, h
 			}
 
 			// Start again tracking
-			accum = make(map[string]bool)
 			cposts = cposts[:0]
 
 			// New transaction index is this one
@@ -171,7 +274,7 @@ func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, h
 			break
 		}
 
-		// Take a copy of the posts
+		// Take a copy of the post
 		p := posts[i]
 
 		// Adjust credit if needed
@@ -194,21 +297,9 @@ func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, h
 		if p.ccy != toCCY {
 			ncpost.val = big.NewRat(0, 1)
 			ncpost.val.Mul(p.val, b.GetPrice(p.date, p.ccy, toCCY))
-
-			// Accumulate for the base
-			accum[ncpost.acct] = true
 		}
 
 		cposts = append(cposts, ncpost)
-
-		// If not the first posting in the transaction...
-		// ... check if there's an accumulation point
-		if i != transIdx {
-			key := findMaxCommonPrefix(eposts[i-1].acct, p.acct, divider)
-			if key != "" {
-				accum[key] = true
-			}
-		}
 
 		i++
 	}

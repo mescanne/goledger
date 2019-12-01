@@ -14,8 +14,6 @@ func Add(cmd *cobra.Command, app *app.App) {
 		Long:              "Show matching accounts",
 		DisableAutoGenTag: true,
 	}
-
-	cmd.AddCommand(ncmd)
 	ncmd.Args = cobra.MaximumNArgs(1)
 	ncmd.RunE = func(cmd *cobra.Command, args []string) error {
 		b, err := app.LoadBook()
@@ -26,9 +24,11 @@ func Add(cmd *cobra.Command, app *app.App) {
 		if len(args) == 1 {
 			regex = args[0]
 		}
-		for _, acct := range b.Accounts(regex) {
+		for _, acct := range b.Accounts(regex, !app.All) {
 			fmt.Fprintf(cmd.OutOrStdout(), "%s\n", acct)
 		}
 		return nil
 	}
+
+	cmd.AddCommand(ncmd)
 }

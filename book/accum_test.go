@@ -332,3 +332,83 @@ func TestTermNonTermMix(t *testing.T) {
 		},
 	)
 }
+
+func TestMultiAccum(t *testing.T) {
+
+	// Test simple accumulation
+	ValidBook(t,
+		[]QuickBook{
+			QuickBook{"2010-10-01", "rand", []QuickPosting{
+				QuickPosting{"Income:T1:A", "ccy", 100},
+				QuickPosting{"Income:T1:B", "ccy", 100},
+				QuickPosting{"Expense:C", "ccy", -200},
+			}},
+		},
+		[]QuickPrice{},
+		"ccy",
+		[]QuickAccumBook{
+			QuickAccumBook{"2010-10-01", "rand", []QuickAccumPosting{
+				QuickAccumPosting{"Income:T1", "ccy", 200, []string{"Income:T1"}},
+				QuickAccumPosting{"Income:T1:A", "ccy", 100, []string{"Income:T1", "A"}},
+				QuickAccumPosting{"Income:T1:B", "ccy", 100, []string{"Income:T1", "B"}},
+				QuickAccumPosting{"Expense:C", "ccy", -200, []string{"Expense:C"}},
+			}},
+		},
+	)
+
+	// Test simple accumulation alternative
+	ValidBook(t,
+		[]QuickBook{
+			QuickBook{"2010-10-01", "rand", []QuickPosting{
+				QuickPosting{"Income:T1:A", "ccy", 100},
+				QuickPosting{"Income:B", "ccy", 100},
+				QuickPosting{"Expense:C", "ccy", -200},
+			}},
+		},
+		[]QuickPrice{},
+		"ccy",
+		[]QuickAccumBook{
+			QuickAccumBook{"2010-10-01", "rand", []QuickAccumPosting{
+				QuickAccumPosting{"Income", "ccy", 200, []string{"Income"}},
+				QuickAccumPosting{"Income:B", "ccy", 100, []string{"Income", "B"}},
+				QuickAccumPosting{"Income:T1:A", "ccy", 100, []string{"Income", "T1:A"}},
+				QuickAccumPosting{"Expense:C", "ccy", -200, []string{"Expense:C"}},
+			}},
+		},
+	)
+
+	// Test combined - share accumulation accounts
+	ValidBook(t,
+		[]QuickBook{
+			QuickBook{"2010-10-01", "rand", []QuickPosting{
+				QuickPosting{"Income:T1:A", "ccy", 100},
+				QuickPosting{"Income:T1:B", "ccy", 100},
+				QuickPosting{"Expense:C", "ccy", -200},
+			}},
+			QuickBook{"2010-10-02", "rand", []QuickPosting{
+				QuickPosting{"Income:T1:A", "ccy", 100},
+				QuickPosting{"Income:B", "ccy", 100},
+				QuickPosting{"Expense:C", "ccy", -200},
+			}},
+		},
+		[]QuickPrice{},
+		"ccy",
+		[]QuickAccumBook{
+			QuickAccumBook{"2010-10-01", "rand", []QuickAccumPosting{
+				QuickAccumPosting{"Income", "ccy", 200, []string{"Income"}},
+				QuickAccumPosting{"Income:T1", "ccy", 200, []string{"Income", "T1"}},
+				QuickAccumPosting{"Income:T1:A", "ccy", 100, []string{"Income", "T1", "A"}},
+				QuickAccumPosting{"Income:T1:B", "ccy", 100, []string{"Income", "T1", "B"}},
+				QuickAccumPosting{"Income:B", "ccy", 0, []string{"Income", "B"}},
+				QuickAccumPosting{"Expense:C", "ccy", -200, []string{"Expense:C"}},
+			}},
+			QuickAccumBook{"2010-10-02", "rand", []QuickAccumPosting{
+				QuickAccumPosting{"Income", "ccy", 200, []string{"Income"}},
+				QuickAccumPosting{"Income:B", "ccy", 100, []string{"Income", "B"}},
+				QuickAccumPosting{"Income:T1", "ccy", 100, []string{"Income", "T1"}},
+				QuickAccumPosting{"Income:T1:A", "ccy", 100, []string{"Income", "T1", "A"}},
+				QuickAccumPosting{"Expense:C", "ccy", -200, []string{"Expense:C"}},
+			}},
+		},
+	)
+}

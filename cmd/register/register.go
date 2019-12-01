@@ -61,27 +61,47 @@ func (reg *RegisterReport) run(rapp *app.App, cmd *cobra.Command, args []string)
 
 	bp := rapp.NewBookPrinter(cmd.OutOrStdout(), b.GetCCYDecimals())
 
-	// Show all matching accounts
+	// Show matching accounts
+	matched := false
 	for _, arg := range args {
-		for _, acct := range b.Accounts(arg) {
-
-			// Get the translations for this account
-			regbook := b.Duplicate()
-			regbook.FilterByAccount(acct)
-			trans := regbook.Transactions()
-
-			// Filter the number of transactions
-			if reg.Count > 0 {
-				trans = trans[0:reg.Count]
-			} else if len(trans)+reg.Count > 0 {
-				trans = trans[len(trans)+reg.Count : len(trans)]
-			}
-
-			bp.Printf("\n%s\n", bp.Ansi(app.BlueUL, acct))
-			if err := ShowRegister(bp, trans, acct, reg.Asc); err != nil {
+		for _, acct := range b.Accounts(arg, !rapp.All) {
+			matched = true
+			if err := reg.showAccount(b, bp, acct); err != nil {
 				return err
 			}
 		}
+	}
+
+	// If nothing matched and we didn't request all.. try again matching
+	// everything this time.
+	if !matched && !rapp.All {
+		for _, arg := range args {
+			for _, acct := range b.Accounts(arg, false) {
+				if err := reg.showAccount(b, bp, acct); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (reg *RegisterReport) showAccount(b *book.Book, bp *app.BookPrinter, acct string) error {
+	regbook := b.Duplicate()
+	regbook.FilterByAccount(acct)
+	trans := regbook.Transactions()
+
+	// Filter the number of transactions
+	if reg.Count > 0 {
+		trans = trans[0:reg.Count]
+	} else if len(trans)+reg.Count > 0 {
+		trans = trans[len(trans)+reg.Count : len(trans)]
+	}
+
+	bp.Printf("\n%s\n", bp.Ansi(app.BlueUL, acct))
+	if err := ShowRegister(bp, trans, acct, reg.Asc); err != nil {
+		return err
 	}
 
 	return nil

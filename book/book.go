@@ -126,7 +126,7 @@ func (b *Book) AdjustPost(search_acct string, replace_acct string, factor float6
 
 // Find all the accounts matching regular expression reg that have non-zero balances
 // TODO: This only applies where balance is already calculated!
-func (b *Book) Accounts(reg string) []string {
+func (b *Book) Accounts(reg string, onlyWithBalance bool) []string {
 	re := regexp.MustCompile(reg)
 	lbal := make(map[string]*big.Rat)
 	accts := make([]string, 0, 10)
@@ -135,9 +135,10 @@ func (b *Book) Accounts(reg string) []string {
 			lbal[p.GetAccount()] = p.GetBalance()
 		}
 	}
+
 	var zero big.Int
 	for acct, bal := range lbal {
-		if bal.Num().Cmp(&zero) != 0 {
+		if !onlyWithBalance || bal.Num().Cmp(&zero) != 0 {
 			accts = append(accts, acct)
 		}
 	}

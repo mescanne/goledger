@@ -99,16 +99,14 @@ func (b *Builder) NewTransaction(date Date, payee string, note string) {
 
 func (b *Builder) AddPosting(acct string, ccy string, amt *big.Rat, note string) {
 	b.post = append(b.post, Posting{
-		date:      b.currDate,
-		payee:     b.currPayee,
-		tnote:     b.currNote,
-		acct:      acct,
-		ccy:       ccy,
-		val:       amt,
-		note:      note,
-		bal:       big.NewRat(0, 1),
-		acctlevel: 0,
-		acctterm:  acct,
+		date:  b.currDate,
+		payee: b.currPayee,
+		tnote: b.currNote,
+		acct:  acct,
+		ccy:   ccy,
+		val:   amt,
+		note:  note,
+		bal:   big.NewRat(0, 1),
 	})
 
 	v, ok := b.currAmts[ccy]
