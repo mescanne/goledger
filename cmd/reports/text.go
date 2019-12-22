@@ -14,7 +14,7 @@ func ShowTransactions(b *app.BookPrinter, trans []book.Transaction) error {
 
 	// First column -- account
 	acct_col := make([]string, 0, len(postingTrans))
-	acct_col = append(acct_col, b.Ansi(app.BlackUL, "Account"))
+	acct_col = append(acct_col, b.Ansi(app.UL, "Account"))
 	for _, v := range postingTrans {
 		lvl := v.GetAccountLevel()
 		var t string
@@ -22,7 +22,7 @@ func ShowTransactions(b *app.BookPrinter, trans []book.Transaction) error {
 			t = b.Ansi(app.BlueUL, v.GetAccountTerm())
 		} else {
 			acctterm := v.GetAccountTerm()
-			t = strings.Repeat("  ", lvl) + b.Ansi(app.Black, acctterm)
+			t = strings.Repeat("  ", lvl) + acctterm
 		}
 		acct_col = append(acct_col, t)
 	}
@@ -37,7 +37,7 @@ func ShowTransactions(b *app.BookPrinter, trans []book.Transaction) error {
 		}
 
 		amt_col := make([]string, 0, len(postingTrans))
-		amt_col = append(amt_col, b.Ansi(app.BlackUL, trans[i].GetDate().String()))
+		amt_col = append(amt_col, b.Ansi(app.UL, trans[i].GetDate().String()))
 		for _, p := range postingTrans {
 			tidx, ok := idx[[3]string{p.GetAccount(), p.GetAccountTerm(), p.GetCCY()}]
 			if !ok {
@@ -69,8 +69,8 @@ func ShowTransactions(b *app.BookPrinter, trans []book.Transaction) error {
 		if i > 0 && postingTrans[i-1].GetAccountLevel() == 0 {
 			b.Printf("\n")
 		}
-		b.Printf("%-*.*s %s\n",
-			lacct, lacct, acct_col[i],
+		b.Printf("%s %s\n",
+			app.PadString(acct_col[i], lacct, true),
 			namt_col[i])
 	}
 

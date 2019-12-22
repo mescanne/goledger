@@ -108,10 +108,6 @@ func (b *BookPrinter) FormatMoney(symbol string, amount *big.Rat, maxlen int) st
 	}
 }
 
-func Length(s string) int {
-	return utf8.RuneCountInString(s)
-}
-
 func ListLength(strs []string, max int) (l int) {
 	for _, s := range strs {
 		ls := Length(s)
@@ -130,11 +126,14 @@ func ListLength(strs []string, max int) (l int) {
 func Combine(strs [][]string, max int) ([]string, error) {
 
 	// Calculate width of each column
-	lamts := make([]int, len(strs))
-	for i, str := range strs {
-		lamts[i] = ListLength(str, max)
+	maxlen := 0
+	for _, str := range strs {
 		if len(str) != len(strs[0]) {
 			return nil, fmt.Errorf("internal error: inconsistent string lengths")
+		}
+		l := ListLength(str, max)
+		if l > maxlen {
+			maxlen = l
 		}
 	}
 
@@ -143,7 +142,7 @@ func Combine(strs [][]string, max int) ([]string, error) {
 	buf := make([]string, len(strs))
 	for i := range ncol {
 		for j := range strs {
-			buf[j] = fmt.Sprintf("%*.*s", lamts[j], lamts[j], strs[j][i])
+			buf[j] = PadString(strs[j][i], maxlen, false)
 		}
 		ncol[i] = strings.Join(buf, " ")
 	}
@@ -151,11 +150,85 @@ func Combine(strs [][]string, max int) ([]string, error) {
 	return ncol, nil
 }
 
+func Length(s string) int {
+	count := 0
+	idx := 0
+	for idx < len(s) {
+		r, width := utf8.DecodeRuneInString(s[idx:])
+		idx += width
+
+		// Skip forward if it's ansi
+		if r == ansiStart {
+			for idx < len(s) && r != ansiEnd {
+				r, width = utf8.DecodeRuneInString(s[idx:])
+				idx += width
+			}
+
+			// Now we have 'm' -- get to the next one
+			continue
+		}
+
+		// Another character
+		count++
+	}
+
+	return count
+}
+
+const ansiStart = '\033'
+const ansiEnd = 'm'
+
+func PadString(s string, max int, justify_left bool) string {
+
+	var sb strings.Builder
+
+	count := 0
+	idx := 0
+	for idx < len(s) {
+
+		r, width := utf8.DecodeRuneInString(s[idx:])
+		idx += width
+
+		// Skip forward if it's ansi
+		if r == ansiStart {
+			sb.WriteRune(r)
+
+			for idx < len(s) && r != ansiEnd {
+				r, width = utf8.DecodeRuneInString(s[idx:])
+				idx += width
+				sb.WriteRune(r)
+			}
+
+			// Now we have 'm' -- get to the next one
+			continue
+		}
+
+		// Another character
+		count++
+
+		if count <= max {
+			sb.WriteRune(r)
+		}
+
+	}
+
+	if count >= max {
+		return sb.String()
+	}
+
+	padding := strings.Repeat(" ", max-count)
+	if justify_left {
+		return sb.String() + padding
+	} else {
+		return padding + sb.String()
+	}
+}
+
 func (b *BookPrinter) Ansi(c AnsiColour, i string) string {
 	if !b.colour {
 		return i
 	}
-	return string(c) + i + "\033[0m"
+	return string(c) + i + string(Reset)
 }
 
 type AnsiColour string
@@ -165,3 +238,5 @@ const Red AnsiColour = "\033[0;31m"
 const BlueUL AnsiColour = "\033[4;34m"
 const BlackUL AnsiColour = "\033[4;30m"
 const Black AnsiColour = "\033[0;30m"
+const UL AnsiColour = "\033[4m"
+const Reset AnsiColour = "\033[0m"
