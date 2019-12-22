@@ -13,6 +13,7 @@ and ledger cli (https://www.ledger-cli.org/)
 ### Options
 
 ```
+      --all              all accounts, not just non-zero balance
       --ccy string       base currency
       --colour           colour (ansi) for reports (default true)
       --divider string   divider for account components for reports (default ":")
