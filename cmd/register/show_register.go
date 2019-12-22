@@ -15,11 +15,11 @@ func ShowRegister(b *app.BookPrinter, inb []book.Transaction, acct string, asc b
 	bal := make([]string, 0, 10)
 
 	// Header
-	dates = append(dates, b.Ansi(app.BlackUL, "Date"))
-	payees = append(payees, b.Ansi(app.BlackUL, "Payee"))
-	caccts = append(caccts, b.Ansi(app.BlackUL, "Counteraccount"))
-	amt = append(amt, b.Ansi(app.BlackUL, "Amount"))
-	bal = append(bal, b.Ansi(app.BlackUL, "Balance"))
+	dates = append(dates, b.Ansi(app.UL, "Date"))
+	payees = append(payees, b.Ansi(app.UL, "Payee"))
+	caccts = append(caccts, b.Ansi(app.UL, "Counteraccount"))
+	amt = append(amt, b.Ansi(app.UL, "Amount"))
+	bal = append(bal, b.Ansi(app.UL, "Balance"))
 
 	for _, trans := range inb {
 
@@ -38,9 +38,9 @@ func ShowRegister(b *app.BookPrinter, inb []book.Transaction, acct string, asc b
 			if p.GetAccount() != acct {
 				continue
 			}
-			dates = append(dates, b.Ansi(app.Black, trans.GetDate().String()))
-			payees = append(payees, b.Ansi(app.Black, trans.GetPayee()))
-			caccts = append(caccts, b.Ansi(app.Black, cacct))
+			dates = append(dates, trans.GetDate().String())
+			payees = append(payees, trans.GetPayee())
+			caccts = append(caccts, cacct)
 			amt = append(amt, b.FormatSimpleMoney(p.GetCCY(), p.GetAmount()))
 			bal = append(bal, b.FormatSimpleMoney(p.GetCCY(), p.GetBalance()))
 		}
@@ -57,12 +57,12 @@ func ShowRegister(b *app.BookPrinter, inb []book.Transaction, acct string, asc b
 		if !asc {
 			idx = len(dates) - i - 1
 		}
-		b.Printf("%-*.*s %-*.*s %-*.*s  %*.*s  %*.*s\n",
-			ldate, ldate, dates[idx],
-			lpayees, lpayees, payees[idx],
-			lcaccts, lcaccts, caccts[idx],
-			lamt, lamt, amt[idx],
-			lbal, lbal, bal[idx])
+		b.Printf("%s %s %s  %s  %s\n",
+			app.PadString(dates[idx], ldate, true),
+			app.PadString(payees[idx], lpayees, true),
+			app.PadString(caccts[idx], lcaccts, true),
+			app.PadString(amt[idx], lamt, false),
+			app.PadString(bal[idx], lbal, false))
 
 	}
 
