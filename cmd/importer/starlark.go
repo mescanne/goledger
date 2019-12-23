@@ -11,6 +11,29 @@ import (
 	"os"
 )
 
+func getNumber(amount starlark.Value) (*big.Rat, error) {
+	if amount == starlark.None {
+		return nil, nil
+	}
+
+	var amt *big.Rat = &big.Rat{}
+	switch v := amount.(type) {
+	case starlark.Float:
+		amt.SetFloat64(float64(v))
+	case starlark.Int:
+		amt.SetInt(v.BigInt())
+	case starlark.String:
+		_, ok := amt.SetString(string(v))
+		if !ok {
+			return nil, fmt.Errorf("invalid amount '%s'", v)
+		}
+	default:
+		return nil, fmt.Errorf("not a valid amount type %T (string, int, float)", amount)
+	}
+
+	return amt, nil
+}
+
 func (imp *ImportDef) processData(idata starlark.Value, file string, sc string) (*book.Book, error) {
 
 	sc, err := utils.GetFileOrStr(sc)
@@ -42,19 +65,29 @@ func (imp *ImportDef) processData(idata starlark.Value, file string, sc string) 
 		var desc string
 		var amount starlark.Value
 
-		// Optional extra values
+		// Optional first account values
 		var denom int = 1
 		var ccy string = imp.CCY
+		var account string = imp.Account
+
+		// Optional second account
+		var amount2 starlark.Value = starlark.None
+		var ccy2 string = imp.CCY
+		var denom2 int = 1
+		var account2 string = ""
+
+		// Optional final settling account
+		var caccount string = imp.CounterAccount
 		var note string = ""
 		var lnote string = ""
-		var account string = imp.Account
-		var caccount string = imp.CounterAccount
 
 		err := starlark.UnpackArgs(b.Name(), args, kwargs,
-			"date", &date, "desc", &desc, "amt", &amount,
-			"ccy?", &ccy, "denom?", &denom,
-			"account?", &account, "caccount?", &caccount,
-			"note?", &note, "lnote?", &lnote)
+			"date", &date, "desc", &desc,
+			"amt", &amount, "ccy?", &ccy, "denom?", &denom, "account?", &account,
+			"amt2", &amount2, "ccy2?", &ccy2, "denom2?", &denom2, "account2?", &account2,
+			"caccount?", &caccount,
+			"note?", &note,
+			"lnote?", &lnote)
 		if err != nil {
 			return nil, err
 		}
@@ -65,20 +98,10 @@ func (imp *ImportDef) processData(idata starlark.Value, file string, sc string) 
 			return nil, fmt.Errorf("invalid date %s", date)
 		}
 
-		// Set the amount
-		var amt *big.Rat = &big.Rat{}
-		switch v := amount.(type) {
-		case starlark.Float:
-			amt.SetFloat64(float64(v))
-		case starlark.Int:
-			amt.SetInt(v.BigInt())
-		case starlark.String:
-			_, ok := amt.SetString(string(v))
-			if !ok {
-				return nil, fmt.Errorf("invalid amount '%s'", v)
-			}
-		default:
-			return nil, fmt.Errorf("not a valid amount type %T (string, int, float)", amount)
+		// Convert the amount
+		amt, err := getNumber(amount)
+		if err != nil {
+			return nil, err
 		}
 
 		// Divide by denominator if set
@@ -91,6 +114,31 @@ func (imp *ImportDef) processData(idata starlark.Value, file string, sc string) 
 		bbuilder.NewTransaction(ndate, string(desc), note)
 		bbuilder.AddPosting(account, ccy, amt, lnote)
 		bbuilder.AddPosting(caccount, ccy, neg, "")
+
+		// Nothing else to do
+		if amount2 == starlark.None && account2 == "" {
+			return starlark.None, nil
+		}
+
+		if amount2 == starlark.None || account2 == "" || ccy2 == ccy {
+			// Error
+		}
+
+		// Convert the amount2
+		amt2, err := getNumber(amount2)
+		if err != nil {
+			return nil, err
+		}
+
+		// Divide by denominator if set
+		amt2.Mul(amt2, big.NewRat(1, int64(denom2)))
+
+		// Set the negative of the amount
+		neg2 := (&big.Rat{}).Neg(amt2)
+
+		bbuilder.AddPosting(account2, ccy2, amt2, "")
+		bbuilder.AddPosting(caccount, ccy2, neg2, "")
+
 		return starlark.None, nil
 	}
 

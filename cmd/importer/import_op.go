@@ -61,7 +61,10 @@ There are four globals in the execution:
 
 Add is the method used for adding new postings:
 
-    add(date, desc, amt, ccy=ccy, denom=denom, account=account, caccount=caccount, note=note)
+    add(date, desc,
+        amt, ccy=ccy, denom=1, account=account,
+	amt2=None, ccy2="", denom2=1, account2=None,
+	caccount=caccount, note="", lnote="")
 
 Parameters:
 
@@ -71,7 +74,8 @@ Parameters:
     * ccy. Optional. The currency of the transaction (otherwise use default).
     * denom. Optional. The denominator of the amount (otherwise 1). (Eg for cents it is denom=100).
     * account. Optional. The account for transactions (otherwise use default).
-    * caccount. Optional. The counteraccount for transaction (otherwuse use default).
+    * amt2, ccy2, denom2, account2. Optional. As primary accounts, but as a secondary posting if needed.
+    * caccount. Optional. The counteraccount for all postings (otherwuse use default).
     * note. Optional. The transaction note.
     * lnote. Optional. The posting note.
 
