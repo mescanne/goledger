@@ -11,7 +11,7 @@ import (
 	"os"
 )
 
-func (imp *ImportDef) processData(idata starlark.Value, sc string) (*book.Book, error) {
+func (imp *ImportDef) processData(idata starlark.Value, file string, sc string) (*book.Book, error) {
 
 	sc, err := utils.GetFileOrStr(sc)
 	if err != nil {
@@ -105,6 +105,7 @@ func (imp *ImportDef) processData(idata starlark.Value, sc string) (*book.Book, 
 	// This dictionary defines the pre-declared environment.
 	predeclared := starlark.StringDict{
 		"data":  idata,
+		"file":  starlark.String(file),
 		"add":   starlark.NewBuiltin("add", addf),
 		"error": starlark.NewBuiltin("error", errorf),
 	}

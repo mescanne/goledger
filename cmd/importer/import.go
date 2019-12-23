@@ -75,7 +75,7 @@ func (imp *ImportDef) run(app *app.App, rcmd *cobra.Command, args []string) erro
 		}
 
 		// Convert the records
-		b, err := imp.processData(imports, imp.Code)
+		b, err := imp.processData(imports, arg, imp.Code)
 		if err != nil {
 			return fmt.Errorf("error processing data: %w", err)
 		}
