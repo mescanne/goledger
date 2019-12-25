@@ -125,9 +125,8 @@ func (report *TransactionReport) run(app *app.App, cmd *cobra.Command, args []st
 		}
 	}
 
-	if report.Combineby != "none" {
-		b.SplitBy(report.Combineby)
-	}
+	// Always combine for reports
+	b.SplitBy(report.Combineby)
 
 	if report.Convert {
 		if app.BaseCCY == "" {

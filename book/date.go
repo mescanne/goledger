@@ -15,7 +15,7 @@ func (date Date) GetYear() string {
 	return fmt.Sprintf("%04d", int(date/10000))
 }
 
-var FloorTypes = []string{"none", "yearly", "quarterly", "monthly", "today"}
+var FloorTypes = []string{"yearly", "quarterly", "monthly", "all"}
 
 func (date Date) Floor(by string) Date {
 	if by == "yearly" {
@@ -24,7 +24,7 @@ func (date Date) Floor(by string) Date {
 		return date.FloorQuarter(0)
 	} else if by == "monthly" {
 		return date.FloorMonth(0)
-	} else if by == "today" {
+	} else if by == "all" {
 		return GetToday()
 	} else {
 		return date
@@ -75,8 +75,8 @@ func (date Date) FloorQuarter(diff int) Date {
 	return Date((year * 10000) + ((month + 1) * 100) + 1)
 }
 
-var dateYYYYMMDD = regexp.MustCompile("^([0-9][0-9][0-9][0-9])[-/]]?([0-9][0-9])[-/]?([0-9][0-9])$")
-var dateDDMMYYYY = regexp.MustCompile("^([0-9][0-9])[-/]]?([0-9][0-9])[-/]?([0-9][0-9][0-9][0-9])$")
+var dateYYYYMMDD = regexp.MustCompile("^([0-9][0-9][0-9][0-9])[-/\\.]?([0-9]?[0-9])?[-/\\.]?([0-9]?[0-9])?$")
+var dateDDMMYYYY = regexp.MustCompile("^([0-9]?[0-9])[-/\\.]?([0-9]?[0-9])[-/\\.]?([0-9][0-9][0-9][0-9])$")
 var date_desc_re = regexp.MustCompile("^(this|last|next)[\\._ \t]+(month|year|quarter)$")
 
 func (date *Date) Set(value string) error {
@@ -93,7 +93,13 @@ func DateFromString(date string) Date {
 	if mat != nil {
 		year, _ := strconv.Atoi(mat[1])
 		month, _ := strconv.Atoi(mat[2])
+		if month == 0 {
+			month = 1
+		}
 		day, _ := strconv.Atoi(mat[3])
+		if day == 0 {
+			day = 1
+		}
 		return Date(year*10000 + month*100 + day)
 	}
 

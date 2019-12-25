@@ -98,9 +98,6 @@ func (b *BookPrinter) FormatMoney(symbol string, amount *big.Rat, maxlen int) st
 	l := maxlen - utf8.RuneCountInString(sym)
 	num := b.pr.Sprintf("%s%*s", sym, l, b.FormatNumber(symbol, amount))
 	var zero big.Rat
-	if b.colour {
-		num = strings.ReplaceAll(num, "  ", " \u00B7")
-	}
 	if amount.Cmp(&zero) >= 0 {
 		return b.Ansi(Blue, num)
 	} else {

@@ -26,13 +26,13 @@ Starter configuration file:
 # Main defaults
 #
 #ledger =  "default_ledger_file"
-#baseccy = "£"
+#baseccy = "Â£"
 
 #
 # Defaults for the report command
 #
 [report]
-combineby = "today"
+combineby = "all"
 type =      "Ansi"
 sum =       true
 convert =   true
@@ -64,7 +64,7 @@ dedup = true
 reclassify = true
 
 [importdefs.bankformat.params]
-ccy = "£"
+ccy = "Â£"
 date = "0"
 amount = "2"
 payee = "1"

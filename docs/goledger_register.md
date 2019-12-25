@@ -18,10 +18,10 @@ goledger register [acct regex]... [flags]
 ### Options
 
 ```
-      --asc            ascending or descending order (default true)
+      --asc            ascending or descending order
       --asof string    end date
       --begin string   begin date
-      --count int      count of entries (0 = no limit) (default -100)
+      --count int      count of entries (0 = no limit)
   -h, --help           help for register
 ```
 

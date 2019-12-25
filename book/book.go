@@ -36,13 +36,20 @@ func (b *Book) GetCCYDecimals() map[string]int {
 }
 
 func (b *Book) SplitBy(by string) {
-	if by == "none" {
+	if by == "none" || len(b.post) == 0 {
 		return
 	}
 
-	b.MapTransaction(func(date Date, payee string) (Date, string) {
-		return date.Floor(by), ""
-	})
+	if by == "all" {
+		d := b.post[0].date
+		b.MapTransaction(func(date Date, payee string) (Date, string) {
+			return d, ""
+		})
+	} else {
+		b.MapTransaction(func(date Date, payee string) (Date, string) {
+			return date.Floor(by), ""
+		})
+	}
 }
 
 //

@@ -37,5 +37,4 @@ goledger import [flags]
 ### SEE ALSO
 
 * [goledger](goledger.md)	 - goledger text-based account application
-* [goledger import bankformat](goledger_import_bankformat.md)	 - Bank Format
 

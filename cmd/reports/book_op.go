@@ -64,7 +64,7 @@ Operations:
 
   combine=type
 
-    Type can be yearly, quarterly, monthly, or today. This will floor all
+    Type can be yearly, quarterly, monthly, or all. This will floor all
     transaction dates according to the rule.
 `
 

@@ -13,9 +13,9 @@ func ShowTransactions(b *app.BookPrinter, trans []book.Transaction) error {
 	postingTrans := trans[len(trans)-1]
 
 	// First column -- account
-	acct_col := make([]string, 0, len(postingTrans))
-	acct_col = append(acct_col, b.Ansi(app.UL, "Account"))
-	for _, v := range postingTrans {
+	acct_col := make([]string, len(postingTrans)+1)
+	acct_col[0] = b.Ansi(app.UL, "Account")
+	for i, v := range postingTrans {
 		lvl := v.GetAccountLevel()
 		var t string
 		if lvl == 0 {
@@ -24,26 +24,41 @@ func ShowTransactions(b *app.BookPrinter, trans []book.Transaction) error {
 			acctterm := v.GetAccountTerm()
 			t = strings.Repeat("  ", lvl) + acctterm
 		}
-		acct_col = append(acct_col, t)
+		acct_col[i+1] = t
+	}
+
+	// Maximum length for amounts
+	maxlen := 0
+	for _, t := range trans {
+		for _, p := range t {
+			l := app.Length(b.FormatSimpleMoney(p.GetCCY(), p.GetAmount()))
+			if l > maxlen {
+				maxlen = l
+			}
+		}
+	}
+
+	header := make([]string, len(trans))
+	for i, t := range trans {
+		header[i] = app.PadString(b.Ansi(app.UL, t.GetDate().String()), maxlen, false)
 	}
 
 	// Second column -- amount
-	amt_cols := make([][]string, 0, len(trans))
+	amt_cols := make([][]string, len(postingTrans)+1)
+	amt_cols[0] = header
+
 	for i := range trans {
 
 		idx := make(map[[3]string]int)
-		for i, v := range trans[i] {
-			idx[[3]string{v.GetAccount(), v.GetAccountTerm(), v.GetCCY()}] = i
+		for tidx, v := range trans[i] {
+			idx[[3]string{v.GetAccount(), v.GetAccountTerm(), v.GetCCY()}] = tidx
 		}
 
-		amt_col := make([]string, 0, len(postingTrans))
-		amt_col = append(amt_col, b.Ansi(app.UL, trans[i].GetDate().String()))
-		for _, p := range postingTrans {
+		for pidx, p := range postingTrans {
 			tidx, ok := idx[[3]string{p.GetAccount(), p.GetAccountTerm(), p.GetCCY()}]
 			if !ok {
-				return fmt.Errorf("account %s currency %s not on all transactions")
+				return fmt.Errorf("account %s (term %s) currency %s not on all transactions", p.GetAccount(), p.GetAccountTerm(), p.GetCCY())
 			}
-
 			v := trans[i][tidx]
 
 			if p.GetAccountLevel() != v.GetAccountLevel() || p.GetAccountTerm() != v.GetAccountTerm() {
@@ -51,18 +66,14 @@ func ShowTransactions(b *app.BookPrinter, trans []book.Transaction) error {
 					p.GetAccountLevel(), v.GetAccountLevel(), p.GetAccountTerm(), v.GetAccountTerm())
 			}
 
-			amt_col = append(amt_col, b.FormatMoney(v.GetCCY(), v.GetAmount(), 0))
+			if amt_cols[pidx+1] == nil {
+				amt_cols[pidx+1] = make([]string, len(trans)+1)
+			}
+			amt_cols[pidx+1][i] = b.FormatMoney(v.GetCCY(), v.GetAmount(), maxlen)
 		}
-		amt_cols = append(amt_cols, amt_col)
 	}
 
 	lacct := app.ListLength(acct_col, 100)
-
-	// Combine amount columns
-	namt_col, err := app.Combine(amt_cols, 100)
-	if err != nil {
-		return err
-	}
 
 	// Print final column out
 	for i := range acct_col {
@@ -71,7 +82,7 @@ func ShowTransactions(b *app.BookPrinter, trans []book.Transaction) error {
 		}
 		b.Printf("%s %s\n",
 			app.PadString(acct_col[i], lacct, true),
-			namt_col[i])
+			strings.Join(amt_cols[i], " "))
 	}
 
 	return nil
