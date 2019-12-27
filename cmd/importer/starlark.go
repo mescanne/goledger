@@ -25,7 +25,7 @@ func getNumber(amount starlark.Value) (*big.Rat, error) {
 	case starlark.String:
 		_, ok := amt.SetString(string(v))
 		if !ok {
-			return nil, fmt.Errorf("invalid amount '%s'", v)
+			return nil, fmt.Errorf("invalid amount '%s'", string(v))
 		}
 	default:
 		return nil, fmt.Errorf("not a valid amount type %T (string, int, float)", amount)
