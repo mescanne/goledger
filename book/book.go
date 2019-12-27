@@ -40,16 +40,9 @@ func (b *Book) SplitBy(by string) {
 		return
 	}
 
-	if by == "all" {
-		d := b.post[0].date
-		b.MapTransaction(func(date Date, payee string) (Date, string) {
-			return d, ""
-		})
-	} else {
-		b.MapTransaction(func(date Date, payee string) (Date, string) {
-			return date.Floor(by), ""
-		})
-	}
+	b.MapTransaction(func(date Date, payee string) (Date, string) {
+		return date.Floor(by), ""
+	})
 }
 
 //

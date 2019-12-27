@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/antzucaro/matchr v0.0.0-20180616170659-cbc221335f3c
+	github.com/antzucaro/matchr v0.0.0-20191224151129-ab6ba461ddec
 	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/russross/blackfriday v2.0.0+incompatible // indirect
 	github.com/spf13/cobra v0.0.6-0.20191019221741-77e4d5aecc4d

@@ -17,7 +17,7 @@ func ShowLedger(b *app.BookPrinter, trans []book.Transaction) error {
 			if pnote != "" {
 				pnote = "  ; " + pnote
 			}
-			b.Printf("  %s  %s%s%s\n", p.GetAccount(), p.GetCCY(), b.FormatNumber(p.GetCCY(), p.GetAmount()), pnote)
+			b.Printf("  %s  %s%s%s\n", p.GetAccount(), b.FormatSymbol(p.GetCCY()), b.FormatNumber(p.GetCCY(), p.GetAmount()), pnote)
 		}
 		b.Printf("\n")
 	}

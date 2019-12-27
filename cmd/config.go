@@ -115,13 +115,13 @@ const DEFAULT_CONFIG_FILE = `
 # Main defaults
 #
 #ledger =  "default_ledger_file"
-#baseccy = "ÃÂÃÂ£"
+#baseccy = "ÃÂÃÂÃÂÃÂ£"
 
 #
 # Defaults for the report command
 #
 [report]
-combineby = "all"
+combineby = "today"
 type =      "Ansi"
 sum =       true
 convert =   true
@@ -153,7 +153,7 @@ dedup = true
 reclassify = true
 
 [importdefs.bankformat.params]
-ccy = "ÃÂÃÂ£"
+ccy = "ÃÂÃÂÃÂÃÂ£"
 date = "0"
 amount = "2"
 payee = "1"
