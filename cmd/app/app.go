@@ -1,4 +1,4 @@
-// This package provides the root application capabilities for the
+// Package app provides the root application capabilities for the
 // goledger commandline interface.
 //
 // This includes loading the ledger, tools for printing the ledger,

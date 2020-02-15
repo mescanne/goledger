@@ -139,6 +139,6 @@ func BookOp(op string, b *book.Book, macros map[string][]string) error {
 		return fmt.Errorf("combine type '%s', invalid: must be one of %s",
 			op_act, strings.Join(book.FloorTypes, ","))
 	default:
-		return fmt.Errorf("operation type '%s' invalid: must be one of map, move", op_type)
+		return fmt.Errorf("operation type '%s' invalid: must be one of map, move, since, asof, or combine", op_type)
 	}
 }

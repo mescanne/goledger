@@ -277,16 +277,6 @@ func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, h
 		// Take a copy of the post
 		p := posts[i]
 
-		// Adjust credit if needed
-		if credit != nil && credit.MatchString(p.GetAccount()) {
-			nval := big.NewRat(0, 1)
-			nval.Neg(p.val)
-			p.val = nval
-		}
-
-		// Add to the posts
-		eposts = append(eposts, p)
-
 		// Create new converted posting for accumulation
 		ncpost := PostKey{
 			acct: p.acct,
@@ -299,6 +289,8 @@ func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, h
 			ncpost.val.Mul(p.val, b.GetPrice(p.date, p.ccy, toCCY))
 		}
 
+		// Add to the posts and cposts
+		eposts = append(eposts, p)
 		cposts = append(cposts, ncpost)
 
 		i++
@@ -318,6 +310,13 @@ func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, h
 		if hidden != "" && p.GetAccount() == hidden {
 			continue
 		}
+
+		if credit != nil && credit.MatchString(p.GetAccount()) {
+			nval := big.NewRat(0, 1)
+			nval.Neg(p.val)
+			p.val = nval
+		}
+
 		newp = append(newp, p)
 	}
 	eposts = newp

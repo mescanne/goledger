@@ -3,6 +3,7 @@ package book
 import (
 	"fmt"
 	"math/big"
+	"regexp"
 	"testing"
 )
 
@@ -92,9 +93,9 @@ func DumpQuickAccumBook(t *testing.T, qb []QuickAccumBook) {
 	}
 }
 
-func ValidBook(t *testing.T, in []QuickBook, p []QuickPrice, ccy string, qb []QuickAccumBook) {
+func ValidBook(t *testing.T, in []QuickBook, p []QuickPrice, ccy string, qb []QuickAccumBook, credit *regexp.Regexp) {
 
-	nb := GetBook(in, p).Accumulate(ccy, ":", nil, "")
+	nb := GetBook(in, p).Accumulate(ccy, ":", credit, "")
 
 	Errorf := func(err string, args ...interface{}) {
 		t.Logf("Error to ccy %s: %s\n", ccy, fmt.Sprintf(err, args...))
@@ -173,6 +174,7 @@ func TestAccum(t *testing.T) {
 				QuickAccumPosting{"Expense:C", "ccy", -300, []string{"Expense:C"}},
 			}},
 		},
+		nil,
 	)
 
 	// Same thing a few times over
@@ -225,6 +227,7 @@ func TestAccum(t *testing.T) {
 				QuickAccumPosting{"Expense:C", "ccy", -300, []string{"Expense:C"}},
 			}},
 		},
+		nil,
 	)
 }
 
@@ -254,6 +257,7 @@ func TestAccumCCY(t *testing.T) {
 				QuickAccumPosting{"Expense:C", "ccy2", -100, []string{"Expense:C", ""}},
 			}},
 		},
+		nil,
 	)
 }
 
@@ -279,6 +283,7 @@ func TestAccumCCYSimple(t *testing.T) {
 				QuickAccumPosting{"Expense:C", "ccy2", -100, []string{"Expense:C", ""}},
 			}},
 		},
+		nil,
 	)
 }
 
@@ -305,6 +310,7 @@ func TestSimple(t *testing.T) {
 				QuickAccumPosting{"Mortgage", "ccy1", -100, []string{"Mortgage"}},
 			}},
 		},
+		nil,
 	)
 
 }
@@ -330,6 +336,34 @@ func TestTermNonTermMix(t *testing.T) {
 				QuickAccumPosting{"Expense:C", "ccy1", -200, []string{"Expense:C"}},
 			}},
 		},
+		nil,
+	)
+}
+
+var CREDIT = regexp.MustCompile("^L:")
+
+func TestSortAccum(t *testing.T) {
+
+	// Test simple accumulation
+	ValidBook(t,
+		[]QuickBook{
+			QuickBook{"2010-10-01", "rand", []QuickPosting{
+				QuickPosting{"L:T1:H", "ccy", -500},
+				QuickPosting{"L:T1:M", "ccy", 14000},
+				QuickPosting{"Other", "ccy", -13500},
+			}},
+		},
+		[]QuickPrice{},
+		"ccy",
+		[]QuickAccumBook{
+			QuickAccumBook{"2010-10-01", "rand", []QuickAccumPosting{
+				QuickAccumPosting{"L:T1", "ccy", -13500, []string{"L:T1"}},
+				QuickAccumPosting{"L:T1:M", "ccy", -14000, []string{"L:T1", "M"}},
+				QuickAccumPosting{"L:T1:H", "ccy", 500, []string{"L:T1", "H"}},
+				QuickAccumPosting{"Other", "ccy", -13500, []string{"Other"}},
+			}},
+		},
+		CREDIT,
 	)
 }
 
@@ -354,6 +388,7 @@ func TestMultiAccum(t *testing.T) {
 				QuickAccumPosting{"Expense:C", "ccy", -200, []string{"Expense:C"}},
 			}},
 		},
+		nil,
 	)
 
 	// Test simple accumulation alternative
@@ -375,6 +410,7 @@ func TestMultiAccum(t *testing.T) {
 				QuickAccumPosting{"Expense:C", "ccy", -200, []string{"Expense:C"}},
 			}},
 		},
+		nil,
 	)
 
 	// Test combined - share accumulation accounts
@@ -410,5 +446,6 @@ func TestMultiAccum(t *testing.T) {
 				QuickAccumPosting{"Expense:C", "ccy", -200, []string{"Expense:C"}},
 			}},
 		},
+		nil,
 	)
 }
