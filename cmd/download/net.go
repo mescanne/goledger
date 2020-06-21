@@ -35,15 +35,15 @@ func fetchFromURL(client *http.Client, url string, data interface{}) error {
 		return fmt.Errorf("url %v: %w", url, err)
 	}
 	defer resp.Body.Close()
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("reading url %v: %w", url, err)
+	}
 	if resp.StatusCode == http.StatusForbidden {
 		return fmt.Errorf("url %v: %w", url, forbidden)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("url %v: status %v", url, resp.StatusCode)
-	}
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("reading url %v: %w", url, err)
+		return fmt.Errorf("url %v: status %v: %s", url, resp.StatusCode, string(bodyBytes))
 	}
 	decoder := json.NewDecoder(bytes.NewReader(bodyBytes))
 	decoder.DisallowUnknownFields()

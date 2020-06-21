@@ -53,9 +53,9 @@ func (m *MonzoDownload) Add(root *cobra.Command) {
 }
 
 type MonzoData struct {
-	Token        *oauth2.Token           `json:"token"`
-	Transactions map[string]*Transaction `json:"transactions"`
-	Accounts     map[string]*Account     `json:"accounts"`
+	Token        *oauth2.Token            `json:"token"`
+	Transactions map[string]*Transaction  `json:"transactions"`
+	Accounts     map[string]*MonzoAccount `json:"accounts"`
 }
 
 type MonzoClient struct {
@@ -73,7 +73,7 @@ func (m *MonzoClient) Sync() error {
 	}
 
 	type Accounts struct {
-		Accounts []*Account
+		Accounts []*MonzoAccount
 	}
 	accts := &Accounts{}
 
@@ -83,7 +83,7 @@ func (m *MonzoClient) Sync() error {
 	}
 
 	if m.data.Accounts == nil {
-		m.data.Accounts = make(map[string]*Account)
+		m.data.Accounts = make(map[string]*MonzoAccount)
 	}
 	for _, v := range accts.Accounts {
 		m.data.Accounts[v.ID] = v
@@ -195,12 +195,12 @@ func (m *MonzoDownload) NewMonzoClient(file string) (*MonzoClient, error) {
 // STRUCTURES
 //
 
-type Account struct {
+type MonzoAccount struct {
 	ID   string
 	Data interface{}
 }
 
-func (acc *Account) UnmarshalJSON(b []byte) error {
+func (acc *MonzoAccount) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &acc.Data); err != nil {
 		return err
 	}
@@ -211,7 +211,7 @@ func (acc *Account) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (acc *Account) MarshalJSON() ([]byte, error) {
+func (acc *MonzoAccount) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&acc.Data)
 }
 

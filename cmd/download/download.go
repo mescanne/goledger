@@ -5,7 +5,8 @@ import (
 )
 
 type Download struct {
-	Monzo MonzoDownload
+	Monzo    MonzoDownload
+	Starling StarlingDownload
 }
 
 func Add(root *cobra.Command, download *Download) {
@@ -17,5 +18,6 @@ func Add(root *cobra.Command, download *Download) {
 	}
 	ncmd.Args = cobra.NoArgs
 	download.Monzo.Add(ncmd)
+	download.Starling.Add(ncmd)
 	root.AddCommand(ncmd)
 }
