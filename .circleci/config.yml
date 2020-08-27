@@ -56,6 +56,3 @@ workflows:
 #            branches:
 #              only: master
               
-# ;      - add_ssh_keys:
-# ;          fingerprints:
-# ;            - "37:e7:cd:57:3d:2e:58:5d:15:a4:d0:71:ab:15:75:57"
