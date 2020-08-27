@@ -1,5 +1,7 @@
 version: 2
 jobs:
+
+  # Build and test - all branches
   build:
     docker:
       - image: circleci/golang:1.15
@@ -14,6 +16,7 @@ jobs:
             go test -v ./...
             go build
 
+  # Deploy - only on master branch
   deploy:
     docker:
       - image: circleci/golang:1.15
