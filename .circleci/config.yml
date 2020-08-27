@@ -6,7 +6,6 @@ jobs:
     working_directory: /go/src/github.com/mescanne/goledger
     steps:
       - checkout
-
       - run:
           name: Test and Build
           command: |
