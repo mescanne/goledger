@@ -46,10 +46,14 @@ func (m *StarlingDownload) Add(root *cobra.Command) {
 	root.AddCommand(ncmd)
 }
 
+type StarlingAccountData struct {
+	Account     *StarlingAccount     `json:"account"`
+	Identifiers interface{}          `json:"identifiers"`
+	FeedItems   map[string]*FeedItem `json:"feeditems"`
+}
+
 type StarlingData struct {
-	FeedItems   map[string]*FeedItem        `json:"feeditems"`
-	Accounts    map[string]*StarlingAccount `json:"accounts"`
-	Identifiers map[string]interface{}      `json:"identifiers"`
+	Accounts map[string]*StarlingAccountData `json:"accounts"`
 }
 
 type StarlingClient struct {
@@ -94,35 +98,29 @@ func (m *StarlingClient) Sync() error {
 
 	// Get Account Map
 	if m.data.Accounts == nil {
-		m.data.Accounts = make(map[string]*StarlingAccount)
+		m.data.Accounts = make(map[string]*StarlingAccountData)
 	}
 	for _, v := range accts.Accounts {
-		m.data.Accounts[v.AccountUid] = v
+		m.data.Accounts[v.AccountUid].Account = v
 	}
 
-	// Download each account's identifier
-	if m.data.Identifiers == nil {
-		m.data.Identifiers = make(map[string]interface{})
-	}
-	for id, _ := range m.data.Accounts {
-		var identifier interface{}
-		if err := fetchFromURL(m.client, STARLING_ENDPOINT+"/api/v2/accounts/"+id+"/identifiers", &identifier); err != nil {
-			return fmt.Errorf("failed getting account identifier: %w", err)
-		}
-		m.data.Identifiers[id] = identifier
-	}
-
-	// Download each account
-	if m.data.FeedItems == nil {
-		m.data.FeedItems = make(map[string]*FeedItem)
-	}
+	// Iterate the accounts
 	for id, acct := range m.data.Accounts {
 
+		// Download each account's identifier
+		if err := fetchFromURL(m.client, STARLING_ENDPOINT+"/api/v2/accounts/"+id+"/identifiers", &acct.Identifiers); err != nil {
+			return fmt.Errorf("failed getting account identifier: %w", err)
+		}
+
 		// Start-of-time for the account
-		sinceTime := acct.CreatedAt
-		if !m.config.AllData && len(m.data.FeedItems) > 0 {
+		sinceTime := acct.Account.CreatedAt
+
+		// Download each account
+		if acct.FeedItems == nil {
+			acct.FeedItems = make(map[string]*FeedItem)
+		} else if !m.config.AllData {
 			recentTime := ""
-			for _, item := range m.data.FeedItems {
+			for _, item := range acct.FeedItems {
 				if recentTime == "" || item.TransactionTime > recentTime {
 					recentTime = item.TransactionTime
 				}
@@ -142,28 +140,32 @@ func (m *StarlingClient) Sync() error {
 		}
 		fmt.Printf("fetching since %s...", sinceTime)
 
+		// Structure to fetch
 		type FeedItems struct {
 			FeedItems []*FeedItem
 		}
 		items := &FeedItems{}
 
-		reqUrl := fmt.Sprintf("%s/api/v2/feed/account/%s/category/%s?changesSince=%s", STARLING_ENDPOINT, id, acct.DefaultCategory, sinceTime)
+		// Fetch
+		reqUrl := fmt.Sprintf("%s/api/v2/feed/account/%s/category/%s?changesSince=%s", STARLING_ENDPOINT, id, acct.Account.DefaultCategory, sinceTime)
 		if err := fetchFromURL(m.client, reqUrl, &items); err != nil {
 			return fmt.Errorf("failed getting feeditems: %w", err)
 		}
 
 		// Update items
-		beforeSize := len(m.data.FeedItems)
-		updated := 0
+		updatedItems := 0
+		newItems := 0
 		for _, item := range items.FeedItems {
-			curr, ok := m.data.FeedItems[item.FeedItemUid]
-			if ok && fmt.Sprintf("%v", curr) != fmt.Sprintf("%v", item) {
-				updated++
+			curr, ok := acct.FeedItems[item.FeedItemUid]
+			if !ok {
+				newItems++
+			} else if fmt.Sprintf("%v", curr) != fmt.Sprintf("%v", item) {
+				updatedItems++
 			}
-			m.data.FeedItems[item.FeedItemUid] = item
+			acct.FeedItems[item.FeedItemUid] = item
 		}
 		fmt.Printf("fetched %d transactions, %d new, %d updated.\n",
-			len(items.FeedItems), len(m.data.FeedItems)-beforeSize, updated)
+			len(items.FeedItems), newItems, updatedItems)
 	}
 
 	if err := utils.SaveToFile(m.file, &m.data); err != nil {
