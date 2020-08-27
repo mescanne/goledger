@@ -29,7 +29,7 @@ jobs:
             go get -u github.com/stevenmatthewt/semantics
       - run:
           name: Cross Compile
-          command: 
+          command: |
             gox -os="linux darwin windows" -arch="amd64" -output="dist/spotifycli_{{.OS}}_{{.Arch}}"
             cd dist/ && gzip *
       - run:
