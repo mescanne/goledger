@@ -140,8 +140,6 @@ func NewJSONBookImporter(cfg *utils.CLIConfig) (BookImporter, error) {
 		default:
 			return nil, fmt.Errorf("unknown type: %T", v)
 		}
-
-		return nil, fmt.Errorf("should never come here")
 	}
 
 	// New reader for JSON -> starlark.Value
