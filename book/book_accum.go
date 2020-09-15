@@ -114,26 +114,21 @@ func addEmptyAccounts(posts []Posting) []Posting {
 	postEnd := len(posts)
 	postIdx := 0
 	for {
-		if postIdx == postEnd {
-			break
-		}
 
-		// Check if need a new transaction
-		// If this is different than previous, accumulate
-		if postIdx > transIdx && (posts[postIdx].date != posts[transIdx].date || posts[postIdx].payee != posts[transIdx].payee) {
-			transIdx = postIdx
-			scanIdx = 0
-		}
-
-		if (scanIdx == len(acctList)) ||
-			(acctList[scanIdx].acct > posts[postIdx].GetAccount()) ||
-			(acctList[scanIdx].acct == posts[postIdx].GetAccount() && acctList[scanIdx].ccy > posts[postIdx].ccy) {
-			panic("FATAL ERROR")
-		}
-
-		if acctList[scanIdx].acct == posts[postIdx].GetAccount() && acctList[scanIdx].ccy == posts[postIdx].ccy {
+		// Skip forward both posting and expected accounts if:
+		//  - not at end of posting
+		//  - not at end of transaction
+		//  - account matches expected account
+		if (postIdx < postEnd) &&
+			(posts[postIdx].date == posts[transIdx].date && posts[postIdx].payee == posts[transIdx].payee) &&
+			(acctList[scanIdx].acct == posts[postIdx].GetAccount() && acctList[scanIdx].ccy == posts[postIdx].ccy) {
 			postIdx++
-		} else {
+			scanIdx++
+			continue
+		}
+
+		// Append missing expected account and try again.
+		if scanIdx < len(acctList) {
 			posts = append(posts, Posting{
 				date:  posts[transIdx].date,
 				payee: posts[transIdx].payee,
@@ -144,9 +139,20 @@ func addEmptyAccounts(posts []Posting) []Posting {
 				note:  "",
 				bal:   big.NewRat(0, 1),
 			})
+			scanIdx++
+			continue
 		}
 
-		scanIdx++
+		// Nothing more to process -- just break out
+		if postIdx == postEnd {
+			break
+		}
+
+		// If normal end of transaction, reset counters
+		if posts[postIdx].date != posts[transIdx].date || posts[postIdx].payee != posts[transIdx].payee {
+			transIdx = postIdx
+			scanIdx = 0
+		}
 	}
 
 	// Sort
