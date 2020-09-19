@@ -443,7 +443,39 @@ func TestMultiAccum(t *testing.T) {
 				QuickAccumPosting{"Income:B", "ccy", 100, []string{"Income", "B"}},
 				QuickAccumPosting{"Income:T1", "ccy", 100, []string{"Income", "T1"}},
 				QuickAccumPosting{"Income:T1:A", "ccy", 100, []string{"Income", "T1", "A"}},
+				QuickAccumPosting{"Income:T1:B", "ccy", 0, []string{"Income", "T1", "B"}},
 				QuickAccumPosting{"Expense:C", "ccy", -200, []string{"Expense:C"}},
+			}},
+		},
+		nil,
+	)
+}
+
+func TestEmptyAccounts(t *testing.T) {
+	ValidBook(t,
+		[]QuickBook{
+			QuickBook{"2010-01-01", "", []QuickPosting{
+				QuickPosting{"T1", "ccy1", 100},
+				QuickPosting{"T2", "ccy1", 100},
+				QuickPosting{"C", "ccy1", -200},
+			}},
+			QuickBook{"2011-01-01", "", []QuickPosting{
+				QuickPosting{"T1", "ccy1", 100},
+				QuickPosting{"C", "ccy1", -100},
+			}},
+		},
+		[]QuickPrice{},
+		"ccy1",
+		[]QuickAccumBook{
+			QuickAccumBook{"2010-01-01", "", []QuickAccumPosting{
+				QuickAccumPosting{"T1", "ccy1", 100, []string{"T1"}},
+				QuickAccumPosting{"T2", "ccy1", 100, []string{"T2"}},
+				QuickAccumPosting{"C", "ccy1", -200, []string{"C"}},
+			}},
+			QuickAccumBook{"2011-01-01", "", []QuickAccumPosting{
+				QuickAccumPosting{"T1", "ccy1", 100, []string{"T1"}},
+				QuickAccumPosting{"T2", "ccy1", 0, []string{"T2"}},
+				QuickAccumPosting{"C", "ccy1", -100, []string{"C"}},
 			}},
 		},
 		nil,
