@@ -30,13 +30,27 @@ func (p Posting) GetCCY() string             { return p.ccy }
 func (p Posting) GetPostNote() string        { return p.note }
 func (p Posting) GetBalance() *big.Rat       { return p.bal }
 
-func (p Posting) byFactor(new_account string, factor *big.Rat) Posting {
+func (p Posting) byFactor(factor *big.Rat) Posting {
+	return p.byAcctDateFactor(p.acct, p.date, factor)
+}
+
+func (p Posting) byAcctFactor(new_account string, factor *big.Rat) Posting {
+	return p.byAcctDateFactor(new_account, p.date, factor)
+}
+
+func (p Posting) byAcctDateFactor(new_account string, new_date Date, factor *big.Rat) Posting {
+	r := big.NewRat(0, 1)
+	r.Mul(p.val, factor)
+	return p.dup(new_account, new_date, r)
+}
+
+func (p Posting) dup(new_account string, new_date Date, new_amount *big.Rat) Posting {
 	new_post := p
+	new_post.date = new_date
 	new_post.acct = new_account
 	new_post.acctterm = new_account
 	new_post.acctlevel = 0
-	new_post.val = big.NewRat(0, 1)
-	new_post.val.Mul(p.val, factor)
+	new_post.val = new_amount
 	new_post.bal = big.NewRat(0, 1)
 	return new_post
 }

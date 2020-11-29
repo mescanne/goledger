@@ -66,6 +66,13 @@ Operations:
 
     Type can be yearly, quarterly, monthly, or all. This will floor all
     transaction dates according to the rule.
+
+  depreciate=/search-regex/asset-acccount/months/
+
+    For all matching accounts, immediately transfer the transaction into asset-account,
+    and then over the specified months transfer it back into the matching account a
+    straight-line portion of it.
+
 `
 
 // Operation must match this regular expression prefix
@@ -74,6 +81,7 @@ var re_op_prefix = regexp.MustCompile("^[A-Za-z][0-9A-Za-z_]*=")
 // Regexp for map and move
 var map_op = regexp.MustCompile("^/([^/]+)/([^/]+)/(([^/]+)/)?$")
 var move_op = regexp.MustCompile("^/([^/]+)/([^/]+)/([0-9\\.]+)/$")
+var deprec_op = regexp.MustCompile("^/([^/]+)/([^/]+)/([0-9\\.]+)/$")
 
 func BookOp(op string, b *book.Book, macros map[string][]string) error {
 	var err error
@@ -138,7 +146,18 @@ func BookOp(op string, b *book.Book, macros map[string][]string) error {
 		}
 		return fmt.Errorf("combine type '%s', invalid: must be one of %s",
 			op_act, strings.Join(book.FloorTypes, ","))
+	case "depreciate=":
+		args := deprec_op.FindStringSubmatch(op_act)
+		if args == nil {
+			return fmt.Errorf("depreciate operation '%s', invalid: must be format '%s'", op_act, deprec_op.String())
+		}
+		months, err := strconv.ParseInt(args[3], 10, 64)
+		if err != nil {
+			return fmt.Errorf("depreciate months '%s', invalid: must be integer: %v", args[3], err)
+		}
+		b.Depreciate(args[1], args[2], "monthly", months)
+		return nil
 	default:
-		return fmt.Errorf("operation type '%s' invalid: must be one of map, move, since, asof, or combine", op_type)
+		return fmt.Errorf("operation type '%s' invalid: must be one of map, move, since, asof, combine, or depreciate", op_type)
 	}
 }

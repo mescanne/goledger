@@ -15,18 +15,22 @@ func (date Date) GetYear() string {
 	return fmt.Sprintf("%04d", int(date/10000))
 }
 
-var FloorTypes = []string{"yearly", "quarterly", "monthly", "today"}
+var FloorTypes = []string{"yearly", "quarterly", "monthly", "today", "none"}
 
 func (date Date) Floor(by string) Date {
+	return date.FloorDiff(by, 0)
+}
+
+func (date Date) FloorDiff(by string, diff int) Date {
 	if by == "yearly" {
-		return date.FloorYear(0)
+		return date.FloorYear(diff)
 	} else if by == "quarterly" {
-		return date.FloorQuarter(0)
+		return date.FloorQuarter(diff)
 	} else if by == "monthly" {
-		return date.FloorMonth(0)
+		return date.FloorMonth(diff)
 	} else if by == "today" {
 		return GetToday()
-	} else {
+	} else { // May be none or invalid
 		return date
 	}
 }

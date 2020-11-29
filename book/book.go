@@ -36,10 +36,6 @@ func (b *Book) GetCCYDecimals() map[string]int {
 }
 
 func (b *Book) SplitBy(by string) {
-	if by == "none" || len(b.post) == 0 {
-		return
-	}
-
 	b.MapTransaction(func(date Date, payee string) (Date, string) {
 		return date.Floor(by), ""
 	})
@@ -93,10 +89,54 @@ func (b *Book) AdjustBy(by string) {
 
 	newposts := make([]Posting, 0, len(b.post))
 	for _, p := range b.post {
-		newposts = append(newposts, p.byFactor(p.GetAccount(), factor))
+		newposts = append(newposts, p.byFactor(factor))
 	}
 
 	b.post = newposts
+	b.compact()
+}
+
+// Depreciation Postings
+//
+// This takes an expense fully paid for and turns it into a depreciating asset.
+//
+// For all postings that match search_acct regular expression with an asset holding account,
+// move all of the expense into the holding account (depreciable asset) and then move back again
+// over time the asset into the expense.
+//
+func (b *Book) Depreciate(search_acct string, replace_acct string, period string, periods int64) {
+	re := regexp.MustCompile(search_acct)
+
+	newposts := b.post
+	for _, p := range b.post {
+
+		// Skip it if not applicable
+		if !re.MatchString(p.GetAccount()) {
+			continue
+		}
+
+		// Depreciating asset account
+		nacct := re.ReplaceAllString(p.GetAccount(), replace_acct)
+
+		// Move all of the balance into the depreciating asset for today.
+		newposts = append(newposts, p.byFactor(big.NewRat(-1, 1)))
+		newposts = append(newposts, p.byAcctFactor(nacct, big.NewRat(1, 1)))
+
+		// Roll it forward.
+		d := p.date
+		for j := int64(0); j < periods; j++ {
+
+			// Move part balance back again
+			newposts = append(newposts, p.byAcctDateFactor(nacct, d, big.NewRat(-1, periods)))
+			newposts = append(newposts, p.byAcctDateFactor(p.GetAccount(), d, big.NewRat(1, periods)))
+
+			// Move forward by the period
+			d = d.FloorDiff(period, 1)
+		}
+	}
+
+	b.post = newposts
+	b.compact()
 }
 
 // Create Adjust Postings
@@ -115,13 +155,14 @@ func (b *Book) AdjustPost(search_acct string, replace_acct string, factor float6
 	newposts := b.post
 	for _, p := range b.post {
 		if re.MatchString(p.GetAccount()) {
-			newposts = append(newposts, p.byFactor(p.GetAccount(), &i))
+			newposts = append(newposts, p.byFactor(&i))
 			nacct := re.ReplaceAllString(p.GetAccount(), replace_acct)
-			newposts = append(newposts, p.byFactor(nacct, &r))
+			newposts = append(newposts, p.byAcctFactor(nacct, &r))
 		}
 	}
 
 	b.post = newposts
+	b.compact()
 }
 
 // Find all the accounts matching regular expression reg that have non-zero balances
@@ -187,6 +228,7 @@ func (b *Book) MapTransaction(mapper func(date Date, payee string) (Date, string
 	for i := range p {
 		p[i].date, p[i].payee = mapper(p[i].date, p[i].payee)
 	}
+	b.compact()
 }
 
 func (b *Book) MapAmount(mapper func(date Date, ccy string) (*big.Rat, string)) {
@@ -211,4 +253,5 @@ func (b *Book) MapAccount(mapper func(acct string) string) {
 		p[i].acctlevel = 0
 		p[i].acctterm = n
 	}
+	b.compact()
 }
