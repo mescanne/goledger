@@ -32,7 +32,7 @@ func findMaxCommonPrefix(left string, right string, divider string) string {
 
 func getSortOrder(a *big.Rat) string {
 	f, _ := a.Float64()
-	g := int(f * 1000_000)
+	g := int64(f * 1000_000)
 	g = 1_000_000_000*1_000_000 - g
 	return fmt.Sprintf("%015x", g)
 }
