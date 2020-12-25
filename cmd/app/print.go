@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -61,6 +62,26 @@ func (b *BookPrinter) Sprintf(format string, a ...interface{}) string {
 	return b.pr.Sprintf(format, a...)
 }
 
+// Print JSON
+func (b *BookPrinter) PrintJSON(v interface{}, pretty bool) error {
+	var ob []byte
+	var err error
+	if pretty {
+		ob, err = json.MarshalIndent(v, "", "    ")
+	} else {
+		ob, err = json.Marshal(v)
+	}
+	if err != nil {
+		return err
+	}
+
+	if _, err = b.Write(ob); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Format the number correctly based on the symbol in a locale-specific
 // way
 func (b *BookPrinter) FormatNumber(symbol string, amount *big.Rat) string {
@@ -106,6 +127,9 @@ func (b *BookPrinter) FormatMoney(symbol string, amount *big.Rat, maxlen int) st
 }
 
 func ListLength(strs []string, max int) (l int) {
+	if max < 0 {
+		max = -1 * max
+	}
 	for _, s := range strs {
 		ls := Length(s)
 		if ls >= max {

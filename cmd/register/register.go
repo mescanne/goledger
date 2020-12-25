@@ -1,9 +1,12 @@
 package register
 
 import (
+	"fmt"
 	"github.com/mescanne/goledger/book"
 	"github.com/mescanne/goledger/cmd/app"
+	"github.com/mescanne/goledger/cmd/utils"
 	"github.com/spf13/cobra"
+	"regexp"
 )
 
 // Configuration for a Register Report
@@ -15,32 +18,39 @@ type RegisterReport struct {
 	EndDate   string
 	Count     int
 	Asc       bool
+	Type      string
+	Combined  bool
 	Macros    []string
 	Accounts  []string
+	Split     bool
 }
 
 const register_long = `Register account postings
 
-Show a registry of postings for an individual account. This
-is useful for reconciliation between accounts and for investigating
-one account.
+Show a registry of postings individual accounts. This is useful for reconciliation
+between accounts and for investigating postings.
 `
 
 func Add(cmd *cobra.Command, app *app.App, reg *RegisterReport) {
 	ncmd := &cobra.Command{
-		Args:              cobra.MinimumNArgs(1),
+		Args: cobra.MinimumNArgs(1),
+		// TODO: Include ops in here as an option
 		ValidArgs:         reg.Accounts,
-		Use:               "register [acct regex]...",
+		Use:               "register [macros|ops...] <acct|regex>",
 		Long:              register_long,
 		Short:             "Show registry of account postings",
 		DisableAutoGenTag: true,
 	}
 
 	// Set defaults
+	reportType := utils.NewEnum(&reg.Type, reportTypes, "reportType")
+	ncmd.Flags().Var(reportType, "type", fmt.Sprintf("report type (%s)", reportType.Values()))
+	ncmd.Flags().BoolVar(&reg.Combined, "combined", reg.Combined, "combined report (all accounts combined)")
 	ncmd.Flags().StringVar(&reg.BeginDate, "begin", reg.BeginDate, "begin date")
 	ncmd.Flags().StringVar(&reg.EndDate, "asof", reg.EndDate, "end date")
 	ncmd.Flags().IntVar(&reg.Count, "count", reg.Count, "count of entries (0 = no limit)")
 	ncmd.Flags().BoolVar(&reg.Asc, "asc", reg.Asc, "ascending or descending order")
+	ncmd.Flags().BoolVar(&reg.Split, "split", reg.Split, "split multiple counteraccounts into separate postings")
 	ncmd.RunE = func(cmd *cobra.Command, args []string) error {
 		return reg.run(app, cmd, args)
 	}
@@ -56,53 +66,37 @@ func (reg *RegisterReport) run(rapp *app.App, cmd *cobra.Command, args []string)
 		return err
 	}
 
+	// Filter by time
 	b.FilterByDateSince(book.DateFromString(reg.BeginDate))
 	b.FilterByDateAsof(book.DateFromString(reg.EndDate))
 
+	// Apply any operations
+	if len(args) > 1 {
+		if err = rapp.BookOps(b, args[0:len(args)-1]...); err != nil {
+			return err
+		}
+	}
+
+	// Create printer
 	bp := rapp.NewBookPrinter(cmd.OutOrStdout(), b.GetCCYDecimals())
 
-	// Show matching accounts
-	matched := false
-	for _, arg := range args {
-		for _, acct := range b.Accounts(arg, !rapp.All) {
-			matched = true
-			if err := reg.showAccount(b, bp, acct); err != nil {
-				return err
-			}
+	// Combined -- just dump out as is
+	arg := args[len(args)-1]
+	if reg.Combined {
+		re, err := regexp.Compile(arg)
+		if err != nil {
+			return fmt.Errorf("invalid regex: '%s': %w", arg, err)
 		}
+		return extractRegisterByRegex(b.Transactions(), re, reg.Split).ShowReport(bp, reg.Type, reg.Count, reg.Asc, true, false)
 	}
 
-	// If nothing matched and we didn't request all.. try again matching
-	// everything this time.
-	if !matched && !rapp.All {
-		for _, arg := range args {
-			for _, acct := range b.Accounts(arg, false) {
-				if err := reg.showAccount(b, bp, acct); err != nil {
-					return err
-				}
-			}
+	for _, acct := range b.Accounts(arg, !rapp.All) {
+		bp.Printf("\n%s\n", bp.Ansi(app.BlueUL, acct))
+		if err := extractRegisterByAccount(b.Transactions(), acct, reg.Split).ShowReport(bp, reg.Type, reg.Count, reg.Asc, false, true); err != nil {
+			return fmt.Errorf("error writing report '%s': %w", acct, err)
 		}
 	}
 
 	return nil
-}
 
-func (reg *RegisterReport) showAccount(b *book.Book, bp *app.BookPrinter, acct string) error {
-	regbook := b.Duplicate()
-	regbook.FilterByAccount(acct)
-	trans := regbook.Transactions()
-
-	// Filter the number of transactions
-	if reg.Count > 0 {
-		trans = trans[0:reg.Count]
-	} else if len(trans)+reg.Count > 0 {
-		trans = trans[len(trans)+reg.Count : len(trans)]
-	}
-
-	bp.Printf("\n%s\n", bp.Ansi(app.BlueUL, acct))
-	if err := ShowRegister(bp, trans, acct, reg.Asc); err != nil {
-		return err
-	}
-
-	return nil
 }

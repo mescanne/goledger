@@ -1,6 +1,7 @@
 package book
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
 )
@@ -21,6 +22,8 @@ type Posting struct {
 	acctsort  string // default "" - sort order for accumulation (intra-transaction)
 }
 
+func (p Posting) GetDate() Date              { return p.date }
+func (p Posting) GetPayee() string           { return p.payee }
 func (p Posting) GetTransactionNote() string { return p.tnote }
 func (p Posting) GetAccount() string         { return p.acct }
 func (p Posting) GetAccountLevel() int       { return p.acctlevel }
@@ -105,4 +108,22 @@ func (p Posting) String() string {
 	pval, _ := p.val.Float64()
 	return fmt.Sprintf("Date: %d, Payee: %s, TNote: %s, Acct: %s, CCY: %s, Value: %f, Bal: %v, Note: %s Level: %d Term: %s",
 		p.date, p.payee, p.tnote, p.acct, p.ccy, pval, p.bal, p.note, p.acctlevel, p.acctterm)
+}
+
+func (p Posting) MarshalJSON() ([]byte, error) {
+
+	type JsonPosting struct {
+		Account string  `json:"account"`
+		CCY     string  `json:"ccy"`
+		Amount  float64 `json:"amount"`
+		Note    string  `json:"note,omitempty"`
+	}
+
+	amt, _ := p.val.Float64()
+	return json.Marshal(&JsonPosting{
+		Account: p.acct,
+		CCY:     p.ccy,
+		Amount:  amt,
+		Note:    p.tnote,
+	})
 }
