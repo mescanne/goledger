@@ -1,6 +1,7 @@
 package book
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -167,4 +168,8 @@ func (date Date) GetTime() time.Time {
 
 func (date Date) String() string {
 	return fmt.Sprintf("%04d/%02d/%02d", int(date/10000), int((date/100)%100), int(date%100))
+}
+
+func (date Date) MarshalJSON() ([]byte, error) {
+	return json.Marshal(date.GetTime().Format(time.RFC3339))
 }

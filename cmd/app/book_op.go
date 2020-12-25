@@ -1,4 +1,4 @@
-package reports
+package app
 
 import (
 	"fmt"
@@ -83,13 +83,23 @@ var map_op = regexp.MustCompile("^/([^/]+)/([^/]+)/(([^/]+)/)?$")
 var move_op = regexp.MustCompile("^/([^/]+)/([^/]+)/([0-9\\.]+)/$")
 var deprec_op = regexp.MustCompile("^/([^/]+)/([^/]+)/([0-9\\.]+)/$")
 
-func BookOp(op string, b *book.Book, macros map[string][]string) error {
+func (app *App) BookOps(b *book.Book, ops ...string) error {
+	for _, op := range ops {
+		if err := app.bookOp(b, op); err != nil {
+			return fmt.Errorf("error applying operation '%s': %w", op, err)
+		}
+	}
+
+	return nil
+}
+
+func (app *App) bookOp(b *book.Book, op string) error {
 	var err error
 
-	m, ok := macros[op]
+	m, ok := app.Macros[op]
 	if ok {
 		for _, macro := range m {
-			err = BookOp(macro, b, macros)
+			err = app.bookOp(b, macro)
 			if err != nil {
 				return fmt.Errorf("macro expansion '%s': %v", op, err)
 			}

@@ -11,6 +11,8 @@ import (
 	"github.com/mescanne/goledger/loader"
 	"github.com/spf13/cobra"
 	"os"
+	"strings"
+	"text/template"
 )
 
 const (
@@ -23,13 +25,14 @@ __goledger_handle_noun() {
 
 // Configuration for an Application
 type App struct {
-	Ledger  string // Location of ledger file
-	BaseCCY string // Conversion CCY for reporting
-	Verbose bool   // Verbose modw
-	Divider string // Default (normally ":")
-	Colour  bool   // Use Ansi Colour
-	All     bool   // Use all accounts, rather than just accounts with a non-zero balance
-	Lang    string // Language for formatting
+	Ledger  string              // Location of ledger file
+	BaseCCY string              // Conversion CCY for reporting
+	Verbose bool                // Verbose modw
+	Divider string              // Default (normally ":")
+	Colour  bool                // Use Ansi Colour
+	Macros  map[string][]string // Macros
+	All     bool                // Use all accounts, rather than just accounts with a non-zero balance
+	Lang    string              // Language for formatting
 }
 
 // Default configuration if none specified
@@ -96,6 +99,20 @@ func (app *App) LoadCommand() *cobra.Command {
 	appCmd.PersistentFlags().BoolVar(&app.Colour, "colour", app.Colour, "colour (ansi) for reports")
 	appCmd.PersistentFlags().BoolVar(&app.All, "all", app.All, "all accounts, not just non-zero balance")
 
+	appCmd.AddCommand(&cobra.Command{
+		Use:               "ops",
+		Short:             "Operations on books",
+		Long:              BookOperationUsage,
+		DisableAutoGenTag: true,
+	})
+
+	appCmd.AddCommand(&cobra.Command{
+		Use:               "macros",
+		Short:             "Preconfigured macros for operations",
+		Long:              mustResolveTemplate("macros", macroTemplate, app.Macros),
+		DisableAutoGenTag: true,
+	})
+
 	appCmd.InitDefaultHelpCmd()
 	appCmd.InitDefaultHelpFlag()
 	appCmd.InitDefaultVersionFlag()
@@ -107,4 +124,28 @@ func (app *App) LoadCommand() *cobra.Command {
 	}
 
 	return appCmd
+}
+
+var macroTemplate = `Preconfigured macros
+  {{ range $key, $ops := . }}
+  Macro {{ $key }}
+  {{- range $op := $ops }}
+    {{ $op }}
+  {{- end }}
+  {{ end }}
+`
+
+func mustResolveTemplate(name string, templ string, data interface{}) string {
+	t := template.New(name)
+	t, err := t.Parse(templ)
+	if err != nil {
+		panic(fmt.Sprintf("template %s failed compiling, but is essential: %v", name, err))
+	}
+	var b strings.Builder
+	err = t.Execute(&b, data)
+	if err != nil {
+		panic(fmt.Sprintf("template %s failed executing, but is essential: %v", name, err))
+	}
+	return b.String()
+
 }

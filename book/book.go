@@ -7,6 +7,8 @@ import (
 	"sort"
 )
 
+/* Book of dated transactions (set of postings), currencies (units), and conversions
+ */
 type Book struct {
 	post   []Posting
 	trans  []Transaction
@@ -100,9 +102,18 @@ func (b *Book) AdjustBy(by string) {
 //
 // This takes an expense fully paid for and turns it into a depreciating asset.
 //
-// For all postings that match search_acct regular expression with an asset holding account,
-// move all of the expense into the holding account (depreciable asset) and then move back again
-// over time the asset into the expense.
+// For all postings that match search_acct regular expression, move the posting amount back
+// into replace_acct (asset holding account) and, over periods into the future, move back
+// into the search_acct.
+//
+// Period is day, month, quarter, or year.
+//
+// NOTE: The amounts are not properly rounded for the currency in question and left as a
+// fully rational number. So amounts will add correctly, but may look off.
+//
+// For example:
+// 1 divided over three periods would be 0.33333 by three, so 0.34 (displayed) by three, adding
+// up to 1.
 //
 func (b *Book) Depreciate(search_acct string, replace_acct string, period string, periods int64) {
 	re := regexp.MustCompile(search_acct)

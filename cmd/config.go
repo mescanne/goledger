@@ -142,6 +142,7 @@ accounts = [
   "Asset:Default",
 ]
 count = -100
+type = "Text"
 asc = true
 
 [importdefs.bankformat]

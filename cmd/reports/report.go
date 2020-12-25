@@ -8,8 +8,6 @@ import (
 	"github.com/spf13/cobra"
 	"math/big"
 	"regexp"
-	"strings"
-	"text/template"
 )
 
 type TransactionReport struct {
@@ -21,7 +19,6 @@ type TransactionReport struct {
 	Sum        bool
 	Type       string
 	Combineby  string
-	Macros     map[string][]string
 }
 
 const (
@@ -72,20 +69,6 @@ func Add(cmd *cobra.Command, app *app.App, report *TransactionReport) {
 	}
 	cmd.AddCommand(ncmd)
 
-	cmd.AddCommand(&cobra.Command{
-		Use:               "ops",
-		Short:             "Operations on books",
-		Long:              BookOperationUsage,
-		DisableAutoGenTag: true,
-	})
-
-	cmd.AddCommand(&cobra.Command{
-		Use:               "macros",
-		Short:             "Preconfigured macros for operations",
-		Long:              mustResolveTemplate("macros", macroTemplate, report.Macros),
-		DisableAutoGenTag: true,
-	})
-
 	// Set defaults
 	floorType := utils.NewEnum(&report.Combineby, book.FloorTypes, "floorType")
 	ncmd.Flags().Var(floorType, "splitby", fmt.Sprintf("combine transactions by periodic date (values %s)", floorType.Values()))
@@ -99,8 +82,8 @@ func Add(cmd *cobra.Command, app *app.App, report *TransactionReport) {
 	ncmd.Flags().StringVar(&report.Hidden, "hidden", report.Hidden, "hidden account in reports for summary")
 
 	// don't need to save it
-	macroNames := make([]string, 0, len(report.Macros))
-	for k, _ := range report.Macros {
+	macroNames := make([]string, 0, len(app.Macros))
+	for k, _ := range app.Macros {
 		macroNames = append(macroNames, k)
 	}
 	ncmd.ValidArgs = macroNames
@@ -118,11 +101,9 @@ func (report *TransactionReport) run(app *app.App, cmd *cobra.Command, args []st
 	}
 
 	// Apply ops
-	for _, op := range args {
-		err = BookOp(op, b, report.Macros)
-		if err != nil {
-			return fmt.Errorf("applying op '%s': %v", op, err)
-		}
+	err = app.BookOps(b, args...)
+	if err != nil {
+		return err
 	}
 
 	// Always combine for reports
@@ -161,34 +142,10 @@ func (report *TransactionReport) run(app *app.App, cmd *cobra.Command, args []st
 	if report.Type == "Text" {
 		return ShowTransactions(bp, trans)
 	} else if report.Type == "Json" {
-		return ShowJsonLedger(bp, trans, report.JsonPretty)
+		return bp.PrintJSON(trans, report.JsonPretty)
 	} else if report.Type == "HTML" {
 		return ShowHTMLTransactions(bp, trans, report.HTMLCSS)
 	} else {
 		return ShowLedger(bp, trans)
 	}
-}
-
-var macroTemplate = `Preconfigured macros
-  {{ range $key, $ops := . }}
-  Macro {{ $key }}
-  {{- range $op := $ops }}
-    {{ $op }}
-  {{- end }}
-  {{ end }}
-`
-
-func mustResolveTemplate(name string, templ string, data interface{}) string {
-	t := template.New(name)
-	t, err := t.Parse(templ)
-	if err != nil {
-		panic(fmt.Sprintf("template %s failed compiling, but is essential: %v", name, err))
-	}
-	var b strings.Builder
-	err = t.Execute(&b, data)
-	if err != nil {
-		panic(fmt.Sprintf("template %s failed executing, but is essential: %v", name, err))
-	}
-	return b.String()
-
 }

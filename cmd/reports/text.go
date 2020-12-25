@@ -57,7 +57,10 @@ func ShowTransactions(b *app.BookPrinter, trans []book.Transaction) error {
 		for pidx, p := range postingTrans {
 			tidx, ok := idx[[3]string{p.GetAccount(), p.GetAccountTerm(), p.GetCCY()}]
 			if !ok {
-				return fmt.Errorf("account %s (term %s) currency %s not on all transactions", p.GetAccount(), p.GetAccountTerm(), p.GetCCY())
+				return fmt.Errorf("account %s (term %s) currency %s not on all transactions; must summarise!",
+					p.GetAccount(),
+					p.GetAccountTerm(),
+					p.GetCCY())
 			}
 			v := trans[i][tidx]
 
