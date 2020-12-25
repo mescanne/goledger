@@ -12,10 +12,28 @@ func ShowTransactions(b *app.BookPrinter, trans []book.Transaction) error {
 	// Main transaction (reference one)
 	postingTrans := trans[len(trans)-1]
 
-	// First column -- account
-	acct_col := make([]string, len(postingTrans)+1)
-	acct_col[0] = b.Ansi(app.UL, "Account")
+	fmts := make([]bool, len(trans)+1)
+	fmts[0] = false
+	for i := range trans {
+		fmts[i+1] = false
+	}
+
+	// Header
+	header := make([]app.ColumnValue, len(trans)+1)
+	header[0] = app.ColumnString(b.Ansi(app.UL, "Account"))
+	for i, t := range trans {
+		header[i+1] = app.ColumnRightString(b.Ansi(app.UL, t.GetDate().String()))
+	}
+
+	// Content
+	rows := make([][]app.ColumnValue, 0, len(postingTrans)+1+10)
+	rows = append(rows, header)
+
+	// First column and rows initialize
+	idx := make(map[[3]string]int)
 	for i, v := range postingTrans {
+
+		// Get account name
 		lvl := v.GetAccountLevel()
 		var t string
 		if lvl == 0 {
@@ -24,69 +42,40 @@ func ShowTransactions(b *app.BookPrinter, trans []book.Transaction) error {
 			acctterm := v.GetAccountTerm()
 			t = strings.Repeat("  ", lvl) + acctterm
 		}
-		acct_col[i+1] = t
-	}
 
-	// Maximum length for amounts
-	maxlen := 0
-	for _, t := range trans {
-		for _, p := range t {
-			l := app.Length(b.FormatSimpleMoney(p.GetCCY(), p.GetAmount()))
-			if l > maxlen {
-				maxlen = l
-			}
+		// Insert newline if needed
+		if i > 0 && v.GetAccountLevel() == 0 {
+			rows = append(rows, nil)
 		}
+
+		pidx := len(rows)
+		rows = append(rows, make([]app.ColumnValue, len(trans)+1))
+		rows[pidx][0] = app.ColumnString(t)
+
+		// Record the index
+		idx[[3]string{v.GetAccount(), v.GetAccountTerm(), v.GetCCY()}] = pidx
 	}
 
-	header := make([]string, len(trans))
-	for i, t := range trans {
-		header[i] = app.PadString(b.Ansi(app.UL, t.GetDate().String()), maxlen, false)
-	}
-
-	// Second column -- amount
-	amt_cols := make([][]string, len(postingTrans)+1)
-	amt_cols[0] = header
-
+	// Now fill in the data
 	for i := range trans {
 
-		idx := make(map[[3]string]int)
-		for tidx, v := range trans[i] {
-			idx[[3]string{v.GetAccount(), v.GetAccountTerm(), v.GetCCY()}] = tidx
-		}
+		for _, v := range trans[i] {
 
-		for pidx, p := range postingTrans {
-			tidx, ok := idx[[3]string{p.GetAccount(), p.GetAccountTerm(), p.GetCCY()}]
+			// Find keys for posting
+			pidx, ok := idx[[3]string{v.GetAccount(), v.GetAccountTerm(), v.GetCCY()}]
 			if !ok {
 				return fmt.Errorf("account %s (term %s) currency %s not on all transactions; must summarise!",
-					p.GetAccount(),
-					p.GetAccountTerm(),
-					p.GetCCY())
-			}
-			v := trans[i][tidx]
-
-			if p.GetAccountLevel() != v.GetAccountLevel() || p.GetAccountTerm() != v.GetAccountTerm() {
-				return fmt.Errorf("account %s has inconsistent level (%d vs %d) or term (%s vs %s)", p.GetAccount(),
-					p.GetAccountLevel(), v.GetAccountLevel(), p.GetAccountTerm(), v.GetAccountTerm())
+					v.GetAccount(),
+					v.GetAccountTerm(),
+					v.GetCCY())
 			}
 
-			if amt_cols[pidx+1] == nil {
-				amt_cols[pidx+1] = make([]string, len(trans)+1)
-			}
-			amt_cols[pidx+1][i] = b.FormatMoney(v.GetCCY(), v.GetAmount(), maxlen)
+			// Record amount
+			rows[pidx][i+1] = b.GetColumnMoney(v.GetCCY(), v.GetAmount())
 		}
 	}
 
-	lacct := app.ListLength(acct_col, 100)
-
-	// Print final column out
-	for i := range acct_col {
-		if i > 0 && postingTrans[i-1].GetAccountLevel() == 0 {
-			b.Printf("\n")
-		}
-		b.Printf("%s %s\n",
-			app.PadString(acct_col[i], lacct, true),
-			strings.Join(amt_cols[i], " "))
-	}
+	b.PrintColumns(rows, fmts)
 
 	return nil
 }

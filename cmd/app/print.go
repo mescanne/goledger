@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"golang.org/x/text/language"
@@ -17,6 +18,8 @@ import (
 // accounting reports
 type BookPrinter struct {
 	w      io.Writer
+	width  int
+	height int
 	pr     *message.Printer
 	decs   map[string]int
 	colour bool
@@ -26,7 +29,7 @@ type BookPrinter struct {
 // decimal CCY (symbol) formatting.
 //
 // Normally decs comes from GetCCYDecimal() from a book.
-func (app *App) NewBookPrinter(w io.Writer, decs map[string]int) *BookPrinter {
+func (app *App) NewBookPrinter(decs map[string]int) *BookPrinter {
 
 	// Create a printer for a number of languages
 	c := catalog.NewBuilder(catalog.Fallback(language.English))
@@ -40,18 +43,24 @@ func (app *App) NewBookPrinter(w io.Writer, decs map[string]int) *BookPrinter {
 	pr := message.NewPrinter(message.MatchLanguage(app.Lang))
 
 	return &BookPrinter{
-		w:      w,
+		w:      app.out,
 		pr:     pr,
 		decs:   decs,
 		colour: app.Colour,
+		width:  app.width,
+		height: app.height,
 	}
+}
+
+func (b *BookPrinter) Width() (int, int) {
+	return b.width, b.height
 }
 
 func (b *BookPrinter) Write(p []byte) (int, error) {
 	return b.w.Write(p)
 }
 
-// Normal Printf() but to specified io.Writier and formatting
+// Normal Printf() but to specified io.Writer and formatting
 // numbers in a locale-specific way
 func (b *BookPrinter) Printf(format string, a ...interface{}) (n int, err error) {
 	return b.pr.Fprintf(b.w, format, a...)
@@ -80,6 +89,149 @@ func (b *BookPrinter) PrintJSON(v interface{}, pretty bool) error {
 	}
 
 	return nil
+}
+
+func (b *BookPrinter) PrintCSV(rows [][]string) error {
+	csvwrite := csv.NewWriter(b)
+
+	// Print out content
+	for _, row := range rows {
+		if err := csvwrite.Write(row); err != nil {
+			return fmt.Errorf("error writing csv: %w", err)
+		}
+	}
+
+	csvwrite.Flush()
+
+	return nil
+}
+
+type ColumnValue interface {
+	Length() int
+	Pad(width int) string
+}
+
+type ColumnMoney struct {
+	symbol string
+	amount string
+}
+
+func (b *BookPrinter) GetColumnMoney(symbol string, amount *big.Rat) ColumnMoney {
+	col := ColumnMoney{
+		symbol: b.FormatSymbol(symbol),
+		amount: b.FormatNumber(symbol, amount),
+	}
+
+	var zero big.Rat
+	if amount.Cmp(&zero) >= 0 {
+		col.amount = b.Ansi(Blue, col.amount)
+		col.symbol = b.Ansi(Blue, col.symbol)
+	} else {
+		col.amount = b.Ansi(Red, col.amount)
+		col.symbol = b.Ansi(Blue, col.symbol)
+	}
+
+	return col
+}
+
+func (v ColumnMoney) Length() int {
+	return Length(v.symbol) + Length(v.amount)
+}
+
+func (v ColumnMoney) Pad(width int) string {
+	amountWidth := width - Length(v.symbol)
+
+	return v.symbol + PadString(v.amount, amountWidth, false)
+}
+
+type ColumnString string
+
+func (v ColumnString) Length() int {
+	return Length(string(v))
+}
+func (v ColumnString) Pad(width int) string {
+	return PadString(string(v), width, true)
+}
+
+type ColumnRightString string
+
+func (v ColumnRightString) Length() int {
+	return Length(string(v))
+}
+func (v ColumnRightString) Pad(width int) string {
+	return PadString(string(v), width, false)
+}
+
+func (b *BookPrinter) PrintColumns(rows [][]ColumnValue, shrinkToTerm []bool) {
+
+	// Calculate content width per column
+	colWidths := make([]int, len(rows[0]), len(rows[0]))
+	for i := 0; i < len(rows); i++ {
+		if rows[i] == nil {
+			continue
+		}
+		for j := 0; j < len(colWidths); j++ {
+			ls := rows[i][j].Length()
+			if ls > colWidths[j] {
+				colWidths[j] = ls
+			}
+		}
+	}
+
+	// Adjust with Min/Max
+	totalWidth := 0     // Total desired width
+	shrinkCols := 0     // Number of columns that can shrink
+	shrinkColWidth := 0 // Shrink columns total width
+	for j := 0; j < len(colWidths); j++ {
+		totalWidth += colWidths[j]
+		if shrinkToTerm[j] {
+			shrinkCols++
+			shrinkColWidth += colWidths[j]
+		}
+	}
+	totalWidth += len(colWidths) - 1
+
+	if b.width > 0 && shrinkCols > 0 && totalWidth > b.width {
+
+		// Amount to shrink
+		shrinkage := totalWidth - b.width
+
+		// Apply to the columns
+		for j := 0; j < len(colWidths); j++ {
+			if !shrinkToTerm[j] {
+				continue
+			}
+
+			// Shrink by the same percentage across columns
+			toShrink := colWidths[j] * shrinkage / shrinkColWidth
+
+			// Adjust the metrics
+			shrinkColWidth -= colWidths[j]
+			shrinkage -= toShrink
+			totalWidth -= toShrink
+			shrinkCols--
+
+			// Shrink the columns
+			colWidths[j] -= toShrink
+		}
+
+	}
+
+	// Write out columns
+	for i := 0; i < len(rows); i++ {
+		if rows[i] == nil {
+			b.w.Write([]byte("\n"))
+			continue
+		}
+		for j := 0; j < len(colWidths); j++ {
+			b.w.Write([]byte(rows[i][j].Pad(colWidths[j])))
+			if j < (len(colWidths) - 1) {
+				b.w.Write([]byte(" "))
+			} else {
+				b.w.Write([]byte("\n"))
+			}
+		}
+	}
 }
 
 // Format the number correctly based on the symbol in a locale-specific
@@ -132,7 +284,7 @@ func ListLength(strs []string, max int) (l int) {
 	}
 	for _, s := range strs {
 		ls := Length(s)
-		if ls >= max {
+		if max > 0 && ls >= max {
 			return max
 		}
 		if ls > l {

@@ -78,7 +78,7 @@ func (reg *RegisterReport) run(rapp *app.App, cmd *cobra.Command, args []string)
 	}
 
 	// Create printer
-	bp := rapp.NewBookPrinter(cmd.OutOrStdout(), b.GetCCYDecimals())
+	bp := rapp.NewBookPrinter(b.GetCCYDecimals())
 
 	// Combined -- just dump out as is
 	arg := args[len(args)-1]

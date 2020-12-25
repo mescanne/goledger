@@ -1,7 +1,6 @@
 package register
 
 import (
-	"encoding/csv"
 	"fmt"
 	"github.com/mescanne/goledger/book"
 	"github.com/mescanne/goledger/cmd/app"
@@ -173,68 +172,70 @@ func (report registryReport) ShowReport(b *app.BookPrinter, format string, count
 
 func (report registryReport) ShowText(b *app.BookPrinter, withAcct bool, withBal bool) error {
 
-	// Initialize columns
-	dates := make([]string, 0, 100)
-	payees := make([]string, 0, 100)
-	accts := make([]string, 0, 100)
-	caccts := make([]string, 0, 100)
-	amt := make([]string, 0, 100)
-	bal := make([]string, 0, 100)
+	// Number of columns
+	cols := 4
+	if withBal {
+		cols++
+	}
+	if withAcct {
+		cols++
+	}
+
+	// ColumnFormats
+	fmts := make([]bool, 0, cols)
+	fmts = append(fmts, false)
+	fmts = append(fmts, true)
+	if withAcct {
+		fmts = append(fmts, true)
+	}
+	fmts = append(fmts, true)
+	fmts = append(fmts, false)
+	if withBal {
+		fmts = append(fmts, false)
+	}
+
+	// Rows
+	rows := make([][]app.ColumnValue, 0, len(report)+1)
 
 	// Header
-	dates = append(dates, b.Ansi(app.UL, "Date"))
-	payees = append(payees, b.Ansi(app.UL, "Payee"))
-	accts = append(accts, b.Ansi(app.UL, "Account"))
-	caccts = append(caccts, b.Ansi(app.UL, "Counteraccount"))
-	amt = append(amt, b.Ansi(app.UL, "Amount"))
-	bal = append(bal, b.Ansi(app.UL, "Balance"))
+	header := make([]app.ColumnValue, 0, cols)
+	header = append(header, app.ColumnString(b.Ansi(app.UL, "Date")))
+	header = append(header, app.ColumnString(b.Ansi(app.UL, "Payee")))
+	if withAcct {
+		header = append(header, app.ColumnString(b.Ansi(app.UL, "Account")))
+	}
+	header = append(header, app.ColumnString(b.Ansi(app.UL, "Counteraccount")))
+	header = append(header, app.ColumnRightString(b.Ansi(app.UL, "Amount")))
+	if withBal {
+		header = append(header, app.ColumnRightString(b.Ansi(app.UL, "Balance")))
+	}
+	rows = append(rows, header)
 
+	// Data
 	for _, p := range report {
-		dates = append(dates, p.Date.String())
-		payees = append(payees, p.Payee)
-		accts = append(accts, p.Account)
-		caccts = append(caccts, strings.Join(p.CounterAccount, ";"))
-		amt = append(amt, b.FormatSimpleMoney(p.CCY, p.Amount))
-		bal = append(bal, b.FormatSimpleMoney(p.CCY, p.Balance))
-	}
-
-	// Apply formatting
-	ldate := app.ListLength(dates, 100)
-	lpayees := app.ListLength(payees, 100)
-	laccts := app.ListLength(accts, 100)
-	lcaccts := app.ListLength(caccts, 100)
-	lamt := app.ListLength(amt, 100)
-	lbal := app.ListLength(bal, 100)
-
-	// Apply padding and print
-	for idx := range dates {
+		row := make([]app.ColumnValue, 0, cols)
+		row = append(row, app.ColumnString(p.Date.String()))
+		row = append(row, app.ColumnString(p.Payee))
 		if withAcct {
-			b.Printf("%s %s %s %s %s",
-				app.PadString(dates[idx], ldate, true),
-				app.PadString(accts[idx], laccts, true),
-				app.PadString(payees[idx], lpayees, true),
-				app.PadString(caccts[idx], lcaccts, true),
-				app.PadString(amt[idx], lamt, false))
-		} else {
-			b.Printf("%s %s %s %s",
-				app.PadString(dates[idx], ldate, true),
-				app.PadString(payees[idx], lpayees, true),
-				app.PadString(caccts[idx], lcaccts, true),
-				app.PadString(amt[idx], lamt, false))
+			row = append(row, app.ColumnString(p.Account))
 		}
+		row = append(row, app.ColumnString(strings.Join(p.CounterAccount, ";")))
+		row = append(row, b.GetColumnMoney(p.CCY, p.Amount))
 		if withBal {
-			b.Printf(" %s", app.PadString(bal[idx], lbal, false))
+			row = append(row, b.GetColumnMoney(p.CCY, p.Balance))
 		}
-		b.Printf("\n")
+		rows = append(rows, row)
 	}
+
+	b.PrintColumns(rows, fmts)
 
 	return nil
 }
-
 func (report registryReport) ShowCSV(b *app.BookPrinter) error {
 
-	csvwrite := csv.NewWriter(b)
-	err := csvwrite.Write([]string{
+	rows := make([][]string, 0, len(report)+1)
+
+	rows = append(rows, []string{
 		"date",
 		"payee",
 		"account",
@@ -243,15 +244,12 @@ func (report registryReport) ShowCSV(b *app.BookPrinter) error {
 		"amount",
 		"balance",
 	})
-	if err != nil {
-		return fmt.Errorf("error writing csv: %w", err)
-	}
 
 	// Print out content
 	for _, p := range report {
 		amt, _ := p.Amount.Float64()
 		bal, _ := p.Balance.Float64()
-		err := csvwrite.Write([]string{
+		rows = append(rows, []string{
 			p.Date.String(),
 			p.Payee,
 			p.Account,
@@ -260,12 +258,7 @@ func (report registryReport) ShowCSV(b *app.BookPrinter) error {
 			fmt.Sprintf("%f", amt),
 			fmt.Sprintf("%f", bal),
 		})
-		if err != nil {
-			return fmt.Errorf("error writing csv: %w", err)
-		}
 	}
 
-	csvwrite.Flush()
-
-	return nil
+	return b.PrintCSV(rows)
 }

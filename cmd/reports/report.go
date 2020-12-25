@@ -136,7 +136,7 @@ func (report *TransactionReport) run(app *app.App, cmd *cobra.Command, args []st
 		trans = b.Transactions()
 	}
 
-	bp := app.NewBookPrinter(cmd.OutOrStdout(), b.GetCCYDecimals())
+	bp := app.NewBookPrinter(b.GetCCYDecimals())
 
 	// Need type of report now..
 	if report.Type == "Text" {
