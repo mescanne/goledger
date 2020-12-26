@@ -103,7 +103,7 @@ func (imp *ImportDef) run(app *app.App, rcmd *cobra.Command, args []string) erro
 		}
 
 		// Use decimals of main book
-		bp := app.NewBookPrinter(rcmd.OutOrStdout(), main.GetCCYDecimals())
+		bp := app.NewBookPrinter(main.GetCCYDecimals())
 
 		// Dump report ledger-style
 		if err := reports.ShowLedger(bp, b.Transactions()); err != nil {

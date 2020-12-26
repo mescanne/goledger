@@ -10,7 +10,10 @@ import (
 	"github.com/mescanne/goledger/book"
 	"github.com/mescanne/goledger/loader"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
+	"io"
 	"os"
+	"os/exec"
 	"strings"
 	"text/template"
 )
@@ -33,6 +36,11 @@ type App struct {
 	Macros  map[string][]string // Macros
 	All     bool                // Use all accounts, rather than just accounts with a non-zero balance
 	Lang    string              // Language for formatting
+
+	// Private
+	width  int       // Width of terminal
+	height int       // Height of terminal
+	out    io.Writer // Output of command
 }
 
 // Default configuration if none specified
@@ -70,8 +78,74 @@ It is in the same spirit as Plain Text Accounting (https://plaintextaccounting.o
 and ledger cli (https://www.ledger-cli.org/)
 `
 
+func (app *App) initialiseTerminal(cmd *cobra.Command) func() error {
+
+	// Set defaults
+	app.out = cmd.OutOrStdout()
+	app.width = -1
+	app.height = -1
+
+	// If stdout is not a terminal, stop now
+	fd := int(os.Stdout.Fd())
+	if !term.IsTerminal(fd) {
+		return nil
+	}
+
+	// Get width/height if possible
+	width, height, err := term.GetSize(fd)
+	if err == nil {
+		app.width = width
+		app.height = height
+	}
+
+	// TODO: Make this configurable from command line
+	// TODO: Make this look into PAGER environment variable
+
+	// Find less
+	path, err := exec.LookPath("less")
+	if err != nil {
+		return nil
+	}
+
+	// Configure less
+	lesscmd := exec.Command(path, "-r")
+	lesscmd.Stdout = os.Stdout
+	lesscmd.Stderr = os.Stderr
+
+	// Create a new stdin pipe
+	stdin, err := lesscmd.StdinPipe()
+	if err != nil {
+		fmt.Printf("error getting stdin pipe: %v\n", err)
+		return nil
+	}
+
+	// Start less
+	if err := lesscmd.Start(); err != nil {
+		fmt.Printf("error starting less: %v\n", err)
+		return nil
+	}
+
+	// Output is now into less
+	app.out = stdin
+
+	// Return cleanup
+	return func() error {
+		if err := stdin.Close(); err != nil {
+			return err
+		}
+		if err := lesscmd.Wait(); err != nil {
+			return err
+		}
+		return nil
+	}
+}
+
 // Load the root application cobra command
 func (app *App) LoadCommand() *cobra.Command {
+
+	// Initialisation cleanup function
+	var cleanup func() error
+
 	var appCmd = &cobra.Command{
 		Use:                    "goledger",
 		Short:                  "goledger text-based account application",
@@ -88,6 +162,19 @@ func (app *App) LoadCommand() *cobra.Command {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
+
+			// Initialise terminal
+			cleanup = app.initialiseTerminal(cmd)
+		},
+
+		// Cleanup if needed
+		PersistentPostRun: func(cmd *cobra.Command, args []string) {
+			if cleanup == nil {
+				return
+			}
+			if err := cleanup(); err != nil {
+				fmt.Printf("error: %v\n", err)
+			}
 		},
 	}
 
