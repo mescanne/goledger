@@ -36,10 +36,6 @@ func (date Date) FloorDiff(by string, diff int) Date {
 	}
 }
 
-//
-// Need an expression for "time distance" relative to current time
-//
-
 func (date Date) FloorYear(diff int) Date {
 	return Date(((int(date/10000) + diff) * 10000) + 101)
 }
@@ -156,9 +152,111 @@ func GetDate(year int, month int, day int) Date {
 }
 
 func (date Date) DaysSince(d2 Date) int {
-	d := date.GetTime().Sub(d2.GetTime())
-	f := int(d.Hours()) / 24
-	return f
+	return date.AsDays() - d2.AsDays()
+}
+
+var monthDays = [12]int{31, 28, 31, 30, 31,
+	30, 31, 31, 30, 31, 30, 31}
+
+func GetDateFromDays(days int) Date {
+
+	// Search for the right year
+	year := days / 365
+	for {
+		leapDays := year/4 + year/400 - year/100
+		if year*365+leapDays <= days {
+			days -= year*365 + leapDays
+			break
+		}
+		year--
+	}
+
+	// Subtract the months
+	month := 0
+	for {
+		daysInMonth := monthDays[month]
+
+		// if it's February, a year dividable by four,
+		// and NOT dividable by 100 OR it is diviable by 400...
+		// Add a leap day.
+		if (month == 1) &&
+			((year+1)%4 == 0) &&
+			((year+1)%100 != 0 || (year+1)%400 == 0) {
+			daysInMonth += 1
+		}
+
+		// If it's within the month, stop
+		if days < daysInMonth {
+			break
+		}
+
+		// Shift month
+		days -= daysInMonth
+		month++
+	}
+
+	return GetDate(year+1, month+1, days+1)
+}
+
+func (date Date) AsDays() int {
+	year := int(date/10000) - 1
+	month := int((date/100)%100) - 1
+	day := int(date%100) - 1
+
+	// Calculate previous years
+	days := year * 365
+	days = days + year/4 + year/400 - year/100
+
+	// Add in month-to-date (without leaps)
+	for i := 0; i < month; i++ {
+		days += monthDays[i]
+
+		// if it's February, a year dividable by four,
+		// and NOT dividable by 100 OR it is diviable by 400...
+		// Add a leap day.
+		if (i == 1) && YearIsLeapYear(year) {
+			days += 1
+		}
+	}
+
+	// Add in day-of-month
+	days += day
+
+	return days
+}
+
+// Year is zero-based (year 1 is 0, year 2000 is 1999)
+func YearIsLeapYear(year int) bool {
+	return ((year+1)%4 == 0) && ((year+1)%100 != 0 || (year+1)%400 == 0)
+}
+
+// Day-in-year
+func (date Date) AsYears() float64 {
+	year := int(date/10000) - 1
+	month := int((date/100)%100) - 1
+	day := int(date%100) - 1
+
+	isLeapYear := YearIsLeapYear(year)
+
+	// Add in month-to-date (without leaps)
+	day = 0
+	for i := 0; i < month; i++ {
+		day += monthDays[i]
+
+		// if it's February, a year dividable by four,
+		// and NOT dividable by 100 OR it is diviable by 400...
+		// Add a leap day.
+		if (i == 1) && isLeapYear {
+			day += 1
+		}
+	}
+
+	daysInYear := 365
+	if isLeapYear {
+		daysInYear++
+	}
+
+	return float64(year) + float64(day)/float64(daysInYear)
 }
 
 func (date Date) GetTime() time.Time {
@@ -167,6 +265,9 @@ func (date Date) GetTime() time.Time {
 }
 
 func (date Date) String() string {
+	if date == Date(0) {
+		return fmt.Sprintf("%10s", " ")
+	}
 	return fmt.Sprintf("%04d/%02d/%02d", int(date/10000), int((date/100)%100), int(date%100))
 }
 
