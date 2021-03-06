@@ -85,7 +85,7 @@ func (s *starlarkBook) Attr(name string) (starlark.Value, error) {
 	}
 
 	if s.frozen {
-		return nil, fmt.Errorf("operation %s invalid: book is frozen")
+		return nil, fmt.Errorf("operation %s invalid: book is frozen", name)
 	}
 
 	// Modifying methods
