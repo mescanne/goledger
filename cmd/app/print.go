@@ -4,22 +4,41 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"golang.org/x/term"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 	"io"
 	"math/big"
+	"os"
 	"strings"
 	"unicode"
 	"unicode/utf8"
 )
 
+var termWidth = -1
+var termHeight = -1
+
+func init() {
+
+	// If stdout is not a terminal, stop now
+	fd := int(os.Stdout.Fd())
+	if !term.IsTerminal(fd) {
+		return
+	}
+
+	// Get width/height if possible
+	tWidth, tHeight, err := term.GetSize(fd)
+	if err == nil {
+		termWidth = tWidth
+		termHeight = tHeight
+	}
+}
+
 // BookPrinter provides formatting for console-based
 // accounting reports
 type BookPrinter struct {
 	w      io.Writer
-	width  int
-	height int
 	pr     *message.Printer
 	decs   map[string]int
 	colour bool
@@ -43,17 +62,15 @@ func (app *App) NewBookPrinter(decs map[string]int) *BookPrinter {
 	pr := message.NewPrinter(message.MatchLanguage(app.Lang))
 
 	return &BookPrinter{
-		w:      app.out,
+		w:      os.Stdout,
 		pr:     pr,
 		decs:   decs,
 		colour: app.Colour,
-		width:  app.width,
-		height: app.height,
 	}
 }
 
 func (b *BookPrinter) Width() (int, int) {
-	return b.width, b.height
+	return termWidth, termHeight
 }
 
 func (b *BookPrinter) Write(p []byte) (int, error) {
@@ -164,6 +181,11 @@ func (v ColumnRightString) Pad(width int) string {
 
 func (b *BookPrinter) PrintColumns(rows [][]ColumnValue, shrinkToTerm []bool) {
 
+	// Initialise output
+	if termHeight < len(rows) {
+		b.w = initialiseLess(b.w)
+	}
+
 	// Calculate content width per column
 	colWidths := make([]int, len(rows[0]), len(rows[0]))
 	for i := 0; i < len(rows); i++ {
@@ -191,10 +213,10 @@ func (b *BookPrinter) PrintColumns(rows [][]ColumnValue, shrinkToTerm []bool) {
 	}
 	totalWidth += len(colWidths) - 1
 
-	if b.width > 0 && shrinkCols > 0 && totalWidth > b.width {
+	if termWidth > 0 && shrinkCols > 0 && totalWidth > termWidth {
 
 		// Amount to shrink
-		shrinkage := totalWidth - b.width
+		shrinkage := totalWidth - termWidth
 
 		// Apply to the columns
 		for j := 0; j < len(colWidths); j++ {
@@ -341,6 +363,11 @@ func Length(s string) int {
 			continue
 		}
 
+		// If it's not printable or a tab (convert to a space), we skip it.
+		if !unicode.IsPrint(r) && r != '\t' {
+			continue
+		}
+
 		// Another character
 		count++
 	}
@@ -376,11 +403,21 @@ func PadString(s string, max int, justify_left bool) string {
 			continue
 		}
 
+		// If it's not printable or a tab (convert to a space), we skip it.
+		if !unicode.IsPrint(r) && r != '\t' {
+			continue
+		}
+
 		// Another character
 		count++
 
 		if count <= max {
-			sb.WriteRune(r)
+			// Convert tab to space
+			if r == '\t' {
+				sb.WriteRune(' ')
+			} else {
+				sb.WriteRune(r)
+			}
 		}
 
 	}
