@@ -7,7 +7,7 @@ import (
 
 type Builder struct {
 	post      []Posting
-	prevTrans map[string]bool
+	prevTrans map[string]int
 	currAmts  map[string]*big.Rat
 	currDate  Date
 	currPayee string
@@ -57,7 +57,7 @@ func (b *Builder) Build() *Book {
 func NewBookBuilder() *Builder {
 	return &Builder{
 		post:      make([]Posting, 0, 200),
-		prevTrans: make(map[string]bool),
+		prevTrans: make(map[string]int),
 		currAmts:  make(map[string]*big.Rat),
 		currDate:  Date(-1),
 		currPayee: "",
@@ -84,12 +84,14 @@ func (b *Builder) NewTransaction(date Date, payee string, note string) {
 
 	// Validate uniqueness of transaction
 	key := fmt.Sprintf("%d %s", date, payee)
-	_, ok := b.prevTrans[key]
-	if ok {
-		payee = payee + " (again)"
-		key = fmt.Sprintf("%d %s", date, payee)
+	idx, ok := b.prevTrans[key]
+	if !ok {
+		b.prevTrans[key] = 1
+	} else {
+		idx++
+		b.prevTrans[key] = idx
+		payee = fmt.Sprintf("%s (%d)", payee, idx)
 	}
-	b.prevTrans[key] = true
 
 	// Initialize new values
 	b.currDate = date
