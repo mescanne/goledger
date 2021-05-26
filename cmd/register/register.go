@@ -20,6 +20,7 @@ type RegisterReport struct {
 	Asc       bool
 	Type      string
 	Combined  bool
+	ZeroStart bool
 	Macros    []string
 	Accounts  []string
 	Split     bool
@@ -50,6 +51,7 @@ func Add(cmd *cobra.Command, app *app.App, reg *RegisterReport) {
 	ncmd.Flags().StringVar(&reg.EndDate, "asof", reg.EndDate, "end date")
 	ncmd.Flags().IntVar(&reg.Count, "count", reg.Count, "count of entries (0 = no limit)")
 	ncmd.Flags().BoolVar(&reg.Asc, "asc", reg.Asc, "ascending or descending order")
+	ncmd.Flags().BoolVar(&reg.ZeroStart, "zero", reg.ZeroStart, "start balance at zero")
 	ncmd.Flags().BoolVar(&reg.Split, "split", reg.Split, "split multiple counteraccounts into separate postings")
 	ncmd.RunE = func(cmd *cobra.Command, args []string) error {
 		return reg.run(app, cmd, args)
@@ -66,10 +68,6 @@ func (reg *RegisterReport) run(rapp *app.App, cmd *cobra.Command, args []string)
 		return err
 	}
 
-	// Filter by time
-	b.FilterByDateSince(book.DateFromString(reg.BeginDate))
-	b.FilterByDateAsof(book.DateFromString(reg.EndDate))
-
 	// Apply any operations
 	if len(args) > 1 {
 		if err = rapp.BookOps(b, args[0:len(args)-1]...); err != nil {
@@ -81,18 +79,27 @@ func (reg *RegisterReport) run(rapp *app.App, cmd *cobra.Command, args []string)
 	bp := rapp.NewBookPrinter(b.GetCCYDecimals())
 
 	// Combined -- just dump out as is
+	var rep book.RegistryReport
 	arg := args[len(args)-1]
 	if reg.Combined {
 		re, err := regexp.Compile(arg)
 		if err != nil {
 			return fmt.Errorf("invalid regex: '%s': %w", arg, err)
 		}
-		return extractRegisterByRegex(b.Transactions(), re, reg.Split).ShowReport(bp, reg.Type, reg.Count, reg.Asc, true, false)
+		rep = b.ExtractRegister(rapp.BaseCCY, re, reg.Split)
+		rep.FilterByDate(reg.BeginDate, reg.EndDate)
+		return ShowReport(bp, rep, reg.Type, reg.Count, reg.Asc, true, true)
 	}
 
 	for _, acct := range b.Accounts(arg, !rapp.All) {
 		bp.Printf("\n%s\n", bp.Ansi(app.BlueUL, acct))
-		if err := extractRegisterByAccount(b.Transactions(), acct, reg.Split).ShowReport(bp, reg.Type, reg.Count, reg.Asc, false, true); err != nil {
+		acctRe, err := regexp.Compile(fmt.Sprintf("^%s$", acct))
+		if err != nil {
+			return fmt.Errorf("failed compiling re for account '%s': %w", acct, err)
+		}
+		rep = b.ExtractRegister(rapp.BaseCCY, acctRe, reg.Split)
+		rep.FilterByDate(reg.BeginDate, reg.EndDate)
+		if err := ShowReport(bp, rep, reg.Type, reg.Count, reg.Asc, false, true); err != nil {
 			return fmt.Errorf("error writing report '%s': %w", acct, err)
 		}
 	}

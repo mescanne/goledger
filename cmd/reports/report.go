@@ -114,7 +114,8 @@ func (report *TransactionReport) run(app *app.App, cmd *cobra.Command, args []st
 			return fmt.Errorf("unable to convert -- no CCY specified")
 		}
 		b.MapAmount(func(date book.Date, iccy string) (*big.Rat, string) {
-			return b.GetPrice(date, iccy, app.BaseCCY), app.BaseCCY
+			rate, _ := b.GetPrice(date, iccy, app.BaseCCY)
+			return rate, app.BaseCCY
 		})
 	}
 

@@ -205,7 +205,6 @@ func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, h
 		if key := findMaxCommonPrefix(posts[i-1].GetAccount(), p.GetAccount(), divider); key != "" {
 			if posts[i-1].GetCCY() == p.GetCCY() &&
 				(posts[i-1].GetAccount() == key || p.GetAccount() == key) {
-				//return nil, fmt.Errorf("cannot accumulate account '%s' (%s) and '%s' (%s)", p.GetAccount(), p.GetCCY(), posts[i-1].GetAccount(), posts[i-1].GetCCY())
 				fmt.Fprintf(os.Stderr, "WARNING: account '%s' (%s) and '%s' (%s) both have balances\n", p.GetAccount(), p.GetCCY(), posts[i-1].GetAccount(), posts[i-1].GetCCY())
 			}
 			accum[key] = true
@@ -292,7 +291,8 @@ func (b *Book) Accumulate(toCCY string, divider string, credit *regexp.Regexp, h
 		// Adjust currency if needed
 		if p.ccy != toCCY {
 			ncpost.val = big.NewRat(0, 1)
-			ncpost.val.Mul(p.val, b.GetPrice(p.date, p.ccy, toCCY))
+			r, _ := b.GetPrice(p.date, p.ccy, toCCY)
+			ncpost.val.Mul(p.val, r)
 		}
 
 		// Add to the posts and cposts

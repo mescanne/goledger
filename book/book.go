@@ -21,8 +21,11 @@ func (b *Book) Transactions() []Transaction {
 	return b.trans
 }
 
-func (b *Book) GetPrice(date Date, unit string, ccy string) *big.Rat {
+func (b *Book) GetPrice(date Date, unit string, ccy string) (*big.Rat, PriceType) {
 	return b.prices.getPrice(date, unit, ccy)
+}
+func (b *Book) GetPriceList(unit string, ccy string) PriceList {
+	return b.prices.getPrices(unit, ccy)
 }
 
 func (b *Book) Duplicate() *Book {
