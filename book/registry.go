@@ -56,6 +56,9 @@ func (b *Book) ExtractRegister(baseccy string, re *regexp.Regexp, split bool) Re
 	bals := make(map[string]*big.Rat)
 	baseBal := big.NewRat(0, 1)
 
+	// Compact the book first
+	b.compact()
+
 	// Iterate each transaction
 	for _, trans := range b.trans {
 

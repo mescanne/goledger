@@ -6,6 +6,7 @@ import (
 	"github.com/mescanne/goledger/cmd/app"
 	"github.com/mescanne/goledger/cmd/utils"
 	"github.com/spf13/cobra"
+	"math/big"
 	"regexp"
 )
 
@@ -21,6 +22,7 @@ type RegisterReport struct {
 	Type      string
 	Combined  bool
 	ZeroStart bool
+	Convert   bool
 	Macros    []string
 	Accounts  []string
 	Split     bool
@@ -53,6 +55,7 @@ func Add(cmd *cobra.Command, app *app.App, reg *RegisterReport) {
 	ncmd.Flags().BoolVar(&reg.Asc, "asc", reg.Asc, "ascending or descending order")
 	ncmd.Flags().BoolVar(&reg.ZeroStart, "zero", reg.ZeroStart, "start balance at zero")
 	ncmd.Flags().BoolVar(&reg.Split, "split", reg.Split, "split multiple counteraccounts into separate postings")
+	ncmd.Flags().BoolVar(&reg.Convert, "convert", reg.Convert, "convert postings to base currency")
 	ncmd.RunE = func(cmd *cobra.Command, args []string) error {
 		return reg.run(app, cmd, args)
 	}
@@ -66,6 +69,16 @@ func (reg *RegisterReport) run(rapp *app.App, cmd *cobra.Command, args []string)
 	b, err := rapp.LoadBook()
 	if err != nil {
 		return err
+	}
+
+	if reg.Convert {
+		if rapp.BaseCCY == "" {
+			return fmt.Errorf("unable to convert -- no CCY specified")
+		}
+		b.MapAmount(func(date book.Date, iccy string) (*big.Rat, string) {
+			rate, _ := b.GetPrice(date, iccy, rapp.BaseCCY)
+			return rate, rapp.BaseCCY
+		})
 	}
 
 	// Apply any operations
