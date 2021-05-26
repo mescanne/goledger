@@ -11,6 +11,7 @@ import (
 	"github.com/mescanne/goledger/cmd/register"
 	"github.com/mescanne/goledger/cmd/reports"
 	"github.com/mescanne/goledger/cmd/utils"
+	"github.com/mescanne/goledger/cmd/web"
 	"github.com/spf13/cobra"
 )
 
@@ -24,6 +25,7 @@ type Config struct {
 	ImportDefs map[string]*importer.ImportDef
 	Generate   map[string]*generate.Generate
 	Download   download.Download
+	Web        web.WebConfig
 }
 
 //
@@ -60,6 +62,13 @@ func Execute() error {
 	download.Add(appCmd, &app.Download)
 	utils.AddShell(appCmd)
 	utils.AddDocs(appCmd)
+
+	// Add Web
+	web.Add(appCmd, &app.Web, &web.WebApp{
+		App:      app.App,
+		Report:   &app.Report,
+		Register: &app.Register,
+	})
 
 	// Run core app
 	if err := appCmd.Execute(); err != nil {
