@@ -62,7 +62,7 @@ func (app *App) NewBookPrinter(decs map[string]int) *BookPrinter {
 	pr := message.NewPrinter(message.MatchLanguage(app.Lang))
 
 	return &BookPrinter{
-		w:      os.Stdout,
+		w:      app.Output,
 		pr:     pr,
 		decs:   decs,
 		colour: app.Colour,

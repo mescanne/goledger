@@ -35,6 +35,7 @@ type App struct {
 	Macros  map[string][]string // Macros
 	All     bool                // Use all accounts, rather than just accounts with a non-zero balance
 	Lang    string              // Language for formatting
+	Output  io.Writer           // Default output - only setting in the app (for web)
 }
 
 // Default configuration if none specified
@@ -82,7 +83,7 @@ func initialiseLess(w io.Writer) io.Writer {
 	}
 
 	// If stdout is not a terminal, stop now
-	if termWidth == -1 {
+	if w != os.Stdout || termWidth == -1 {
 		return w
 	}
 
@@ -142,7 +143,6 @@ func (app *App) LoadCommand() *cobra.Command {
 		// if there is an error -- at this point all CLI syntax-related
 		// errors should be resolved. This is just for runtime errors.
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			//cmd.SilenceUsage = true
 			cmd.SilenceErrors = true
 		},
 
@@ -187,6 +187,15 @@ func (app *App) LoadCommand() *cobra.Command {
 	if err := appCmd.MarkFlagFilename("ledger"); err != nil {
 		fmt.Printf("%v\n", err)
 		os.Exit(2)
+	}
+
+	// Set Stdout for default output
+	if app.Output != nil {
+		fmt.Fprintf(app.Output, "Overriding outputs.\n")
+		appCmd.SetOut(app.Output)
+		appCmd.SetErr(app.Output)
+	} else {
+		app.Output = appCmd.OutOrStdout()
 	}
 
 	return appCmd

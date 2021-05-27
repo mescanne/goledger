@@ -1,22 +1,22 @@
 package web
 
 import (
+	"embed"
 	"fmt"
 	"github.com/mescanne/goledger/cmd/accounts"
 	"github.com/mescanne/goledger/cmd/app"
 	"github.com/mescanne/goledger/cmd/currencies"
 	"github.com/mescanne/goledger/cmd/register"
 	"github.com/mescanne/goledger/cmd/reports"
-	"io"
-	//"github.com/mescanne/goledger/cmd/utils"
 	"github.com/spf13/cobra"
+	"io"
 	"net/http"
 )
 
 type WebConfig struct {
 	Port  int
 	Host  string
-	Local bool
+	Local string
 }
 
 type WebApp struct {
@@ -24,6 +24,9 @@ type WebApp struct {
 	Report   *reports.TransactionReport
 	Register *register.RegisterReport
 }
+
+//go:embed index.html
+var webData embed.FS
 
 const web_long = `Web reporting
 
@@ -39,16 +42,21 @@ func Add(root *cobra.Command, webcfg *WebConfig, app *WebApp) {
 		Long:              web_long,
 		DisableAutoGenTag: true,
 	}
+
 	if webcfg.Port == 0 {
 		webcfg.Port = DEFAULT_PORT
 	}
+
 	ncmd.Flags().IntVar(&webcfg.Port, "port", webcfg.Port, "port for webserver")
 	ncmd.Flags().StringVar(&webcfg.Host, "host", webcfg.Host, "host for serving")
-	ncmd.Flags().BoolVar(&webcfg.Local, "local", webcfg.Local, "Serve local files from /assets rather than compiled")
+	ncmd.Flags().StringVar(&webcfg.Local, "local", webcfg.Local, "Serve local files from directory rather than compiled")
+	ncmd.MarkFlagDirname("local")
 	ncmd.Args = cobra.NoArgs
+
 	ncmd.RunE = func(cmd *cobra.Command, args []string) error {
 		return webcfg.run(app, cmd, args)
 	}
+
 	root.AddCommand(ncmd)
 }
 
@@ -57,7 +65,13 @@ func (webcfg *WebConfig) run(app *WebApp, cmd *cobra.Command, args []string) err
 	http.Handle("/goledger", http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 		webcfg.handle(app, resp, req)
 	}))
-	http.Handle("/", http.FileServer(FS(webcfg.Local)))
+
+	if webcfg.Local != "" {
+		http.Handle("/", http.FileServer(http.Dir(webcfg.Local)))
+	} else {
+		http.Handle("/", http.FileServer(http.FS(webData)))
+	}
+
 	return http.ListenAndServe(fmt.Sprintf("%s:%d", webcfg.Host, webcfg.Port), nil)
 }
 
@@ -84,7 +98,7 @@ func (webcfg *WebConfig) handle(app *WebApp, resp http.ResponseWriter, req *http
 	resp.WriteHeader(http.StatusOK)
 	err := app.Execute(args, resp)
 	if err != nil {
-		fmt.Printf("got error: %v\b", err)
+		fmt.Fprintf(resp, "Error: %v\n", err)
 	}
 
 	//fmt.Fprintf(resp, "Hello world")
@@ -110,6 +124,10 @@ func (webcfg *WebConfig) handle(app *WebApp, resp http.ResponseWriter, req *http
 //
 func (app *WebApp) Execute(args []string, out io.Writer) error {
 
+	// Set the output
+	app.Output = out
+	app.Colour = false
+
 	// Load core application
 	appCmd := app.LoadCommand()
 
@@ -120,8 +138,7 @@ func (app *WebApp) Execute(args []string, out io.Writer) error {
 	register.Add(appCmd, &app.App, app.Register)
 	currencies.Add(appCmd, &app.App)
 
-	// Set the
-	appCmd.SetOut(out)
+	// Set the arguments
 	appCmd.SetArgs(args)
 
 	// Run core app
