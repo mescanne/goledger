@@ -7,6 +7,32 @@ import (
 	"math/big"
 )
 
+var indents = [...]string{
+	"  ",
+	"    ",
+	"      ",
+	"        ",
+	"          ",
+	"            ",
+	"              ",
+	"                ",
+	"                  ",
+	"                    ",
+	"                      ",
+	"                        ",
+	"                          ",
+}
+
+func indentedString(c int) string {
+	if c >= len(indents) {
+		return indents[len(indents)-1]
+	}
+	if c < 0 {
+		return indents[0]
+	}
+	return indents[c]
+}
+
 func ShowHTMLTransactions(b *app.BookPrinter, trans []book.Transaction, HTMLCSS string) error {
 
 	if HTMLCSS == "" {
@@ -44,13 +70,18 @@ func ShowHTMLTransactions(b *app.BookPrinter, trans []book.Transaction, HTMLCSS 
 		zero := &big.Rat{}
 		for _, v := range posts {
 			thisLevel := v.GetAccountLevel()
+
 			diff := "sameindent"
 			if thisLevel > lastLevel {
 				diff = "moreindent"
-				b.Printf("  <div class=\"indentbox\">\n")
+				for i := lastLevel; i < thisLevel; i++ {
+					b.Printf("%s  <div class=\"indentbox\">\n", indentedString(i))
+				}
 			} else if thisLevel < lastLevel {
 				diff = "lessindent"
-				b.Printf("  </div>\n")
+				for i := lastLevel - 1; i >= thisLevel; i-- {
+					b.Printf("%s  </div>\n", indentedString(i))
+				}
 			}
 
 			amt := v.GetAmount()
@@ -59,10 +90,11 @@ func ShowHTMLTransactions(b *app.BookPrinter, trans []book.Transaction, HTMLCSS 
 				sign = "pos"
 			}
 
-			b.Printf("  <div class=\"post indent%d %s\">\n", thisLevel, diff)
-			b.Printf("    <div class=\"account\">%s</div>\n", v.GetAccountTerm())
-			b.Printf("    <div class=\"amount %s\">%s%s</div>\n", sign, b.FormatSymbol(v.GetCCY()), b.FormatNumber(v.GetCCY(), amt))
-			b.Printf("  </div>\n")
+			thisIndent := indentedString(thisLevel)
+			b.Printf("%s  <div class=\"post indent%d %s\">\n", thisIndent, thisLevel, diff)
+			b.Printf("%s    <div class=\"account\">%s</div>\n", thisIndent, v.GetAccountTerm())
+			b.Printf("%s    <div class=\"amount %s\">%s%s</div>\n", thisIndent, sign, b.FormatSymbol(v.GetCCY()), b.FormatNumber(v.GetCCY(), amt))
+			b.Printf("%s  </div>\n", thisIndent)
 
 			lastLevel = thisLevel
 		}

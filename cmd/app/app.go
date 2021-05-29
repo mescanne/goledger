@@ -191,7 +191,6 @@ func (app *App) LoadCommand() *cobra.Command {
 
 	// Set Stdout for default output
 	if app.Output != nil {
-		fmt.Fprintf(app.Output, "Overriding outputs.\n")
 		appCmd.SetOut(app.Output)
 		appCmd.SetErr(app.Output)
 	} else {

@@ -95,6 +95,7 @@ func (webcfg *WebConfig) handle(app *WebApp, resp http.ResponseWriter, req *http
 		args = u_args
 	}
 
+	resp.Header()["Content-Type"] = []string{"text/html"}
 	resp.WriteHeader(http.StatusOK)
 	err := app.Execute(args, resp)
 	if err != nil {
