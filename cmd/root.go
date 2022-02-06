@@ -10,6 +10,7 @@ import (
 	"github.com/mescanne/goledger/cmd/importer"
 	"github.com/mescanne/goledger/cmd/register"
 	"github.com/mescanne/goledger/cmd/reports"
+	"github.com/mescanne/goledger/cmd/returns"
 	"github.com/mescanne/goledger/cmd/utils"
 	"github.com/mescanne/goledger/cmd/web"
 	"github.com/spf13/cobra"
@@ -22,6 +23,7 @@ type Config struct {
 	app.App
 	Report     reports.TransactionReport
 	Register   register.RegisterReport
+	Returns    returns.ReturnsReport
 	ImportDefs map[string]*importer.ImportDef
 	Generate   map[string]*generate.Generate
 	Download   download.Download
@@ -55,6 +57,7 @@ func Execute() error {
 	// Add sub-commands
 	accounts.Add(appCmd, &app.App)
 	reports.Add(appCmd, &app.App, &app.Report)
+	returns.Add(appCmd, &app.App, &app.Returns)
 	register.Add(appCmd, &app.App, &app.Register)
 	importer.Add(appCmd, &app.App, app.ImportDefs)
 	generate.Add(appCmd, &app.App, app.Generate)

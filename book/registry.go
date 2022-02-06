@@ -18,11 +18,12 @@ type RegistryEntry struct {
 	CCY            string   `json:"ccy"`
 	Balance        *big.Rat `json:"balance"` // Balance for CCY across all extract accounts
 
-	// Conversions to base
-	BaseCCY     string    // BaseCCY (always the same)
-	BaseAmount  *big.Rat  // Amount in BaseCCY
-	BaseSource  PriceType // Source of price for conversion
-	BaseBalance *big.Rat  // Total balance to date across all CCYs converted to BaseCCY (recalculated each time)
+	// Conversions to base (for transaction)
+	BaseAmount *big.Rat  // Amount in BaseCCY
+	BaseSource PriceType // Source of price for conversion
+
+	// Total balance for base
+	BaseBalance *big.Rat // Total balance to date across all CCYs converted to BaseCCY (recalculated each time)
 }
 
 func (rep *RegistryReport) FilterByDate(mindate, maxdate string) {
@@ -49,6 +50,50 @@ func (rep *RegistryReport) FilterByDate(mindate, maxdate string) {
 	} else {
 		*rep = (*rep)[startIdx:endIdx]
 	}
+}
+
+type RegistrySummaryReport []*RegistrySummaryEntry
+type RegistrySummaryEntry struct {
+
+	// Inflow/outflow
+	Date           Date
+	Account        string
+	Payee          string
+	CounterAccount string
+	CCY            string
+	Cashflow       float64 // In BaseCCY
+
+	// Total balance across entire portfolio
+	Balance float64 // In BaseCCY
+}
+
+func (rep *RegistryReport) ExtractSummary(track *regexp.Regexp) RegistrySummaryReport {
+	data := make([]*RegistrySummaryEntry, 0, 100)
+
+	var bal float64 = 0.0
+	for _, p := range *rep {
+
+		// Convert
+		amt, _ := p.BaseAmount.Float64()
+		bal += amt
+
+		// If tracking, then
+		data = append(data, &RegistrySummaryEntry{
+			Date:           p.Date,
+			Account:        p.Account,
+			Payee:          p.Payee,
+			CounterAccount: p.CounterAccount,
+			CCY:            p.CCY,
+			Cashflow:       amt,
+			Balance:        bal,
+		})
+	}
+
+	return data
+}
+
+func (rep *RegistrySummaryReport) IRR() float64 {
+	return 0.0
 }
 
 func (b *Book) ExtractRegister(baseccy string, re *regexp.Regexp, split bool) RegistryReport {
@@ -119,7 +164,7 @@ func (b *Book) ExtractRegister(baseccy string, re *regexp.Regexp, split bool) Re
 				// Add to balance
 				bal = bal.Add(bal, camts[i])
 
-				// Calculate baseAmt, baseSource, and baseBal
+				// Calculate baseAmt and baseSource
 				baseAmt := camts[i]
 				var baseSource PriceType = PriceTypeExact
 				if p.GetCCY() != baseccy {
@@ -131,7 +176,8 @@ func (b *Book) ExtractRegister(baseccy string, re *regexp.Regexp, split bool) Re
 					}
 					baseAmt = big.NewRat(0, 1).Mul(r, camts[i])
 				}
-				baseBal = baseBal.Add(baseBal, baseAmt)
+
+				// Calculate the balance across all curencies
 
 				// Update data
 				data = append(data, &RegistryEntry{
@@ -142,7 +188,6 @@ func (b *Book) ExtractRegister(baseccy string, re *regexp.Regexp, split bool) Re
 					Amount:         camts[i],
 					CCY:            p.GetCCY(),
 					Balance:        big.NewRat(0, 1).Set(bal),
-					BaseCCY:        baseccy,
 					BaseAmount:     baseAmt,
 					BaseSource:     baseSource,
 				})

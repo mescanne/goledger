@@ -33,6 +33,52 @@ func (d PriceType) String() string {
 
 type PriceList []Price
 
+type PriceMap struct {
+	unit ccy
+	pb   *priceBook
+	amts map[string]*big.Rat
+	pi   map[string]*PriceIterator
+}
+
+func (pb *priceBook) getMap(unit string) {
+	return &PriceMap{
+		unit: unit,
+		pb:   pb,
+		amts: make(map[string]*big.Rat),
+		pi:   make(map[string]*PriceIterator),
+	}
+}
+
+func (pm *PriceMap) Add(ccy string, namt *big.Rat) error {
+	amt, ok := pm.amts[ccy]
+	if !ok {
+		amt = big.NewRat(0, 1)
+		pm.amts[ccy] = amt
+		pl := pm.pb.getPrices(pm.unit, ccy)
+		if pl == nil {
+			return fmt.Errorf("no mapping for %s to %s", pm.unit, ccy)
+		}
+		pi[ccy] = pl.GetIterator()
+	}
+
+	// Add it in for the currency
+	amt.Add(amt, namt)
+
+	return nil
+}
+
+func (pm *PriceMap) GetValue(date Date) *big.Rat {
+	bal := big.NewRat(0, 1)
+	for ccy, amt := range pm.amts {
+
+		// Get the rate
+		rate, pt := pm.pi[ccy].GetPrice(date)
+		// bal += amt * rate
+	}
+
+	return bal
+}
+
 // Want a price iterator that
 type PriceIterator struct {
 	idx int
