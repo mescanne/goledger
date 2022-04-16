@@ -18,7 +18,7 @@ type StarlingDownload struct {
 	AllData             bool
 }
 
-const STARLING_DAYS_AGO = 90
+const STARLING_DAYS_AGO = 1
 
 func (m *StarlingDownload) Add(root *cobra.Command) {
 	ncmd := &cobra.Command{
@@ -47,9 +47,10 @@ func (m *StarlingDownload) Add(root *cobra.Command) {
 }
 
 type StarlingAccountData struct {
-	Account     *StarlingAccount     `json:"account"`
-	Identifiers interface{}          `json:"identifiers"`
-	FeedItems   map[string]*FeedItem `json:"feeditems"`
+	Account     *StarlingAccount                 `json:"account"`
+	Spaces      *Spaces                          `json:"spaces"`
+	Identifiers interface{}                      `json:"identifiers"`
+	FeedItems   map[string]map[string]*FeedItem  `json:"feeditems"`
 }
 
 type StarlingData struct {
@@ -84,6 +85,73 @@ func (m *StarlingDownload) NewStarlingClient(file string) (*StarlingClient, erro
 	}, nil
 }
 
+func (m *StarlingClient) syncFeed(acct *StarlingAccountData, name string, categoryUid string) error {
+
+	sinceTime := acct.Account.CreatedAt
+	accountId := acct.Account.AccountUid
+
+	if acct.FeedItems == nil {
+		acct.FeedItems = make(map[string]map[string]*FeedItem)
+	}
+	if acct.FeedItems[categoryUid] == nil {
+		acct.FeedItems[categoryUid] = make(map[string]*FeedItem)
+	}
+	feed := acct.FeedItems[categoryUid]
+
+	// Find most recent time minus N days
+	if !m.config.AllData && len(feed) > 0 {
+		recentTime := ""
+		for _, item := range feed {
+			if recentTime == "" || item.UpdatedAt > recentTime {
+				recentTime = item.UpdatedAt
+			}
+		}
+
+		// Subtract DAYS AGO
+		ttime, err := time.Parse(time.RFC3339, recentTime)
+		if err != nil {
+			return fmt.Errorf("failed parsing time '%s': %w", recentTime, err)
+		}
+		adjustedRecentTime := ttime.AddDate(0, 0, -1*STARLING_DAYS_AGO).Format(time.RFC3339)
+
+		// Use this time if it's more recent
+		if adjustedRecentTime > sinceTime {
+			sinceTime = adjustedRecentTime
+		}
+	}
+
+	fmt.Printf("Downloading category %s (%s) since %s\n", name, categoryUid, sinceTime)
+
+	// Structure to fetch
+	type FeedItems struct {
+		FeedItems []*FeedItem
+	}
+	items := &FeedItems{}
+
+	// Fetch
+	reqUrl := fmt.Sprintf("%s/api/v2/feed/account/%s/category/%s?changesSince=%s", STARLING_ENDPOINT, accountId, categoryUid, sinceTime)
+	if err := fetchFromURL(m.client, reqUrl, &items); err != nil {
+		return fmt.Errorf("failed getting feeditems: %w", err)
+	}
+
+	// Update items
+	updatedItems := 0
+	newItems := 0
+	for _, item := range items.FeedItems {
+		curr, ok := feed[item.FeedItemUid]
+		if !ok {
+			newItems++
+		} else if fmt.Sprintf("%v", curr) != fmt.Sprintf("%v", item) {
+			updatedItems++
+		}
+		feed[item.FeedItemUid] = item
+	}
+	fmt.Printf("Downloaded %d transactions(s), %d new, %d updated.\n",
+		len(items.FeedItems), newItems, updatedItems)
+
+	return nil
+}
+
 func (m *StarlingClient) Sync() error {
 
 	type Accounts struct {
@@ -101,6 +169,10 @@ func (m *StarlingClient) Sync() error {
 		m.data.Accounts = make(map[string]*StarlingAccountData)
 	}
 	for _, v := range accts.Accounts {
+		_, ok := m.data.Accounts[v.AccountUid]
+		if !ok {
+			m.data.Accounts[v.AccountUid] = &StarlingAccountData{}
+		}
 		m.data.Accounts[v.AccountUid].Account = v
 	}
 
@@ -112,60 +184,29 @@ func (m *StarlingClient) Sync() error {
 			return fmt.Errorf("failed getting account identifier: %w", err)
 		}
 
-		// Start-of-time for the account
-		sinceTime := acct.Account.CreatedAt
-
-		// Download each account
-		if acct.FeedItems == nil {
-			acct.FeedItems = make(map[string]*FeedItem)
-		} else if !m.config.AllData {
-			recentTime := ""
-			for _, item := range acct.FeedItems {
-				if recentTime == "" || item.TransactionTime > recentTime {
-					recentTime = item.TransactionTime
-				}
-			}
-
-			// Subtract DAYS AGO
-			ttime, err := time.Parse(time.RFC3339, recentTime)
-			if err != nil {
-				return fmt.Errorf("failed parsing time '%s': %w", recentTime, err)
-			}
-			adjustedRecentTime := ttime.AddDate(0, 0, -1*STARLING_DAYS_AGO).Format(time.RFC3339)
-
-			// Use this time if it's more recent
-			if adjustedRecentTime > sinceTime {
-				sinceTime = adjustedRecentTime
-			}
-		}
-		fmt.Printf("fetching since %s...", sinceTime)
-
-		// Structure to fetch
-		type FeedItems struct {
-			FeedItems []*FeedItem
-		}
-		items := &FeedItems{}
-
-		// Fetch
-		reqUrl := fmt.Sprintf("%s/api/v2/feed/account/%s/category/%s?changesSince=%s", STARLING_ENDPOINT, id, acct.Account.DefaultCategory, sinceTime)
-		if err := fetchFromURL(m.client, reqUrl, &items); err != nil {
-			return fmt.Errorf("failed getting feeditems: %w", err)
+		// Download default category feed
+		if err := m.syncFeed(acct, "main account", acct.Account.DefaultCategory); err != nil {
+			return err
 		}
 
-		// Update items
-		updatedItems := 0
-		newItems := 0
-		for _, item := range items.FeedItems {
-			curr, ok := acct.FeedItems[item.FeedItemUid]
-			if !ok {
-				newItems++
-			} else if fmt.Sprintf("%v", curr) != fmt.Sprintf("%v", item) {
-				updatedItems++
-			}
-			acct.FeedItems[item.FeedItemUid] = item
+		// Fetch spaces
+		if err := fetchFromURL(m.client, STARLING_ENDPOINT+"/api/v2/account/"+id+"/spaces", &acct.Spaces); err != nil {
+			return fmt.Errorf("failed getting spaces: %w", err)
 		}
-		fmt.Printf("fetched %d transactions, %d new, %d updated.\n",
-			len(items.FeedItems), newItems, updatedItems)
+
+		// Download  Saving Spaces
+		for _, savingsSpace := range acct.Spaces.SavingsGoals {
+			if err := m.syncFeed(acct, savingsSpace.Name, savingsSpace.SavingsGoalUid); err != nil {
+				return err
+			}
+		}
+
+		// Download Spending Spaces
+		for _, spendingSpace := range acct.Spaces.SpendingSpaces {
+			if err := m.syncFeed(acct, spendingSpace.Name, spendingSpace.SpaceUid); err != nil {
+				return err
+			}
+		}
 	}
 
 	if err := utils.SaveToFile(m.file, &m.data); err != nil {
@@ -207,9 +248,63 @@ func (acc *StarlingAccount) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&acc.Data)
 }
 
+type Spaces struct {
+	SavingsGoals   []SavingsGoal   `json:"savingsGoals"`
+	SpendingSpaces []SpendingSpace `json:"spendingSpaces"`
+}
+
+type SavingsGoal struct {
+	SavingsGoalUid string
+	Name string
+	Data interface{}
+}
+
+func (t *SavingsGoal) UnmarshalJSON(b []byte) error {
+	if err := json.Unmarshal(b, &t.Data); err != nil {
+		return err
+	}
+	var err error
+	if t.SavingsGoalUid, err = utils.GetStringValue(t.Data, "savingsGoalUid"); err != nil {
+		return err
+	}
+	if t.Name, err = utils.GetStringValue(t.Data, "name"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *SavingsGoal) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.Data)
+}
+
+type SpendingSpace struct {
+	SpaceUid string
+	Name string
+	Data interface{}
+}
+
+func (t *SpendingSpace) UnmarshalJSON(b []byte) error {
+	if err := json.Unmarshal(b, &t.Data); err != nil {
+		return err
+	}
+	var err error
+	if t.SpaceUid, err = utils.GetStringValue(t.Data, "spaceUid"); err != nil {
+		return err
+	}
+	if t.Name, err = utils.GetStringValue(t.Data, "name"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *SpendingSpace) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.Data)
+}
+
 type FeedItem struct {
 	FeedItemUid     string
 	TransactionTime string
+	UpdatedAt       string
 	Data            interface{}
 }
 
@@ -222,6 +317,9 @@ func (t *FeedItem) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	if t.TransactionTime, err = utils.GetStringValue(t.Data, "transactionTime"); err != nil {
+		return err
+	}
+	if t.UpdatedAt, err = utils.GetStringValue(t.Data, "updatedAt"); err != nil {
 		return err
 	}
 	return nil
