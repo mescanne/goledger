@@ -18,7 +18,7 @@ type StarlingDownload struct {
 	AllData             bool
 }
 
-const STARLING_DAYS_AGO = 1
+const STARLING_DAYS_AGO = 20
 
 func (m *StarlingDownload) Add(root *cobra.Command) {
 	ncmd := &cobra.Command{
@@ -55,6 +55,7 @@ type StarlingAccountData struct {
 
 type StarlingData struct {
 	Accounts map[string]*StarlingAccountData `json:"accounts"`
+	Payees []interface{}
 }
 
 type StarlingClient struct {
@@ -194,7 +195,7 @@ func (m *StarlingClient) Sync() error {
 			return fmt.Errorf("failed getting spaces: %w", err)
 		}
 
-		// Download  Saving Spaces
+		// Download Saving Spaces
 		for _, savingsSpace := range acct.Spaces.SavingsGoals {
 			if err := m.syncFeed(acct, savingsSpace.Name, savingsSpace.SavingsGoalUid); err != nil {
 				return err
@@ -208,6 +209,17 @@ func (m *StarlingClient) Sync() error {
 			}
 		}
 	}
+
+	// Get payees
+	type Payees struct {
+		Payees []interface{}
+	}
+	p := &Payees{}
+	if err := fetchFromURL(m.client, STARLING_ENDPOINT+"/api/v2/payees", p); err != nil {
+		return fmt.Errorf("failed getting payees: %s", err)
+	}
+	m.data.Payees = p.Payees
+
 
 	if err := utils.SaveToFile(m.file, &m.data); err != nil {
 		return fmt.Errorf("failed saving: %w", err)
