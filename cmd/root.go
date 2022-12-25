@@ -12,13 +12,11 @@ import (
 	"github.com/mescanne/goledger/cmd/register"
 	"github.com/mescanne/goledger/cmd/reports"
 	"github.com/mescanne/goledger/cmd/utils"
-	"github.com/mescanne/goledger/cmd/web"
+	// "github.com/mescanne/goledger/cmd/web"
 	"github.com/spf13/cobra"
 )
 
-//
 // Configuration object
-//
 type Config struct {
 	app.App
 	Report     reports.TransactionReport
@@ -26,13 +24,11 @@ type Config struct {
 	ImportDefs map[string]*importer.ImportDef
 	Generate   map[string]*generate.Generate
 	Download   download.Download
-	Web        web.WebConfig
-	Export     export.ExportReport
+	// Web        web.WebConfig
+	Export export.ExportReport
 }
 
-//
 // Execute command line program
-//
 func Execute() error {
 	app := &Config{
 		App: app.DefaultApp,
@@ -67,11 +63,11 @@ func Execute() error {
 	utils.AddDocs(appCmd)
 
 	// Add Web
-	web.Add(appCmd, &app.Web, &web.WebApp{
-		App:      app.App,
-		Report:   &app.Report,
-		Register: &app.Register,
-	})
+	// web.Add(appCmd, &app.Web, &web.WebApp{
+	//	App:      app.App,
+	//	Report:   &app.Report,
+	//	Register: &app.Register,
+	//})
 
 	// Run core app
 	if err := appCmd.Execute(); err != nil {
