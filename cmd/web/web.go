@@ -25,7 +25,7 @@ type WebApp struct {
 	Register *register.RegisterReport
 }
 
-//go:embed index.html
+//go:embed static/*.js static/*.css index.html
 var webData embed.FS
 
 const web_long = `Web reporting
@@ -76,53 +76,23 @@ func (webcfg *WebConfig) run(app *WebApp, cmd *cobra.Command, args []string) err
 }
 
 func (webcfg *WebConfig) handle(app *WebApp, resp http.ResponseWriter, req *http.Request) {
-	//req.Method, req.URL, req.Header, req.Body
-	//// , req.Form, req.PostForm
-	//defer resp.Body.Close()
-	//body, err := ioutil.ReadAll(resp.Body)
-	//resp.Header
-
-	// Need:
-	// - Simple way to send in through forms, multipart forms, or JSON POST configuration parameters.
-	// - Simple way to send in command line arguments (?) through GET parameters perhaps?
-	// - Mechanism to send plain text back (normal) or JSON or HTML depending on the content type of webcfg.
-
 	args := []string{}
-
 	v := req.URL.Query()
 	u_args, ok := v["arg"]
 	if ok {
 		args = u_args
 	}
 
+	// NOTE: This should be JSON if it's rendering in JSON!
 	resp.Header()["Content-Type"] = []string{"text/html"}
 	resp.WriteHeader(http.StatusOK)
 	err := app.Execute(args, resp)
 	if err != nil {
 		fmt.Fprintf(resp, "Error: %v\n", err)
 	}
-
-	//fmt.Fprintf(resp, "Hello world")
-
-	// possibly can re-execute the command as-is multiple times.
-
-	// Then we need:
-	// A suite of files embedded that can be used to drive the command line from the web.
-	// This allows configuration of what returns, getting JSON, building webcfg, etc.
-
-	// Order to start with:
-	// - A simple HTML form, static page, that can pass in command line arguments?
-	// - Or a JSON form? Maybe just command line arguments is enough.
-
-	// Order to start:
-	// Develop a gen-embed approach with some HTML. Get that working.
-	// Custom the HTML to have a command line input at the top.
-	// Send in a request to the web to process it.
 }
 
-//
 // Execute command line program
-//
 func (app *WebApp) Execute(args []string, out io.Writer) error {
 
 	// Set the output

@@ -33,6 +33,10 @@ type runeReader struct {
 func (rr *basicReader) parsePayee() string {
 	_ = rr.consumeWS()
 
+	if rr.ch == '"' {
+		return strings.TrimSpace(rr.parseQuotedString())
+	}
+
 	var buf bytes.Buffer
 	for rr.ch != eof && rr.ch != ';' && rr.ch != eol {
 		buf.WriteRune(rr.ch)
@@ -60,6 +64,11 @@ func (rr *basicReader) parseNote() string {
 
 func (rr *basicReader) parseTransaction() (book.Date, string, string) {
 	date := rr.parseDate()
+	_ = rr.consumeWS()
+	if rr.ch == '*' {
+		rr.next()
+		_ = rr.consumeWS()
+	}
 	payee := rr.parsePayee()
 	note := rr.parseNote()
 	if rr.ch == eol {
@@ -109,6 +118,29 @@ func (rr *basicReader) parseAccount() string {
 	return buf.String()
 }
 
+func IsCCYRune(c rune) bool {
+	return (c != eof &&
+		c != ';' &&
+		c != '@' &&
+		c != eol &&
+		!unicode.IsSpace(c) &&
+		c != '-' &&
+		c != '.' &&
+		(c < '0' || c > '9'))
+}
+
+func (rr *basicReader) parseCCYAmt() (string, *big.Rat) {
+	if rr.ch == '"' || IsCCYRune(rr.ch) {
+		ccy := rr.parseCCY()
+		amt := rr.parseAmt()
+		return ccy, amt
+	} else {
+		amt := rr.parseAmt()
+		ccy := rr.parseCCY()
+		return ccy, amt
+	}
+}
+
 func (rr *basicReader) parseCCY() string {
 	_ = rr.consumeWS()
 
@@ -117,14 +149,8 @@ func (rr *basicReader) parseCCY() string {
 	}
 
 	var buf bytes.Buffer
-	runes := make([]rune, 0, 10)
-	for rr.ch != eof && rr.ch != ';' &&
-		rr.ch != eol &&
-		!unicode.IsSpace(rr.ch) &&
-		rr.ch != '-' && rr.ch != '.' &&
-		(rr.ch < '0' || rr.ch > '9') {
+	for IsCCYRune(rr.ch) {
 		buf.WriteRune(rr.ch)
-		runes = append(runes, rr.ch)
 		rr.next()
 	}
 
@@ -154,8 +180,7 @@ func (rr *basicReader) parsePrice(loader TransactionLoader) {
 	_ = rr.parseTime()
 	unit := rr.parseCCY()
 	_ = rr.consumeWS()
-	ccy := rr.parseCCY()
-	amt := rr.parseAmt()
+	ccy, amt := rr.parseCCYAmt()
 	loader.AddPrice(book.Date(date), unit, ccy, amt)
 	if rr.ch == eol {
 		rr.next()
@@ -234,6 +259,9 @@ func parseFileLocal(loader TransactionLoader, filename string, alias map[string]
 			// If it's include
 			if command == "INCLUDE" {
 				ifile := rr.parseToEOL()
+				if ifile[0] == '"' && ifile[len(ifile)-1] == '"' {
+					ifile = ifile[1 : len(ifile)-1]
+				}
 				err := parseFileLocal(loader, filepath.Join(filepath.Dir(filename), ifile), nmap)
 				if err != nil {
 					return err
@@ -279,16 +307,15 @@ func (rr *basicReader) parsePosting(loader TransactionLoader, alias map[string]s
 		rr.next()
 		isNeg = true
 	}
-	ccy := rr.parseCCY()
-	dec := rr.parseAmt()
+	ccy, dec := rr.parseCCYAmt()
 	if isNeg {
 		dec.Neg(dec)
 	}
 	_ = rr.consumeWS()
 	if rr.ch == '@' {
 		rr.next()
-		_ = rr.parseCCY()
-		_ = rr.parseAmt()
+		_ = rr.consumeWS()
+		_, _ = rr.parseCCYAmt()
 	}
 	note := rr.parseNote()
 	if rr.ch == eol {

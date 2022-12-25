@@ -24,6 +24,21 @@ func (b *Book) Transactions() []Transaction {
 func (b *Book) GetPrice(date Date, unit string, ccy string) (*big.Rat, PriceType) {
 	return b.prices.getPrice(date, unit, ccy)
 }
+
+type PricePair struct {
+	Unit string
+	CCY  string
+}
+
+func (b *Book) GetPricePairs() []PricePair {
+	pairs := make([]PricePair, 0, len(b.prices.data))
+	for pair, _ := range b.prices.data {
+		pairs = append(pairs, pair)
+	}
+
+	return pairs
+}
+
 func (b *Book) GetPriceList(unit string, ccy string) PriceList {
 	return b.prices.getPrices(unit, ccy)
 }

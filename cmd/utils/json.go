@@ -35,6 +35,35 @@ func GetStringValue(data interface{}, key string) (string, error) {
 	return i, nil
 }
 
+func GetListValue(data interface{}, key string) ([]interface{}, error) {
+	type empty interface{}
+	d, ok := data.(map[string]interface{})
+	if !ok {
+		return []interface{}{}, fmt.Errorf("for key %s expected JSON object, got: %s", key, ToJson(data))
+	}
+	id, ok := d[key]
+	if !ok {
+		return []interface{}{}, fmt.Errorf("expected key %s missing, got: %s", key, ToJson(data))
+	}
+	i, ok := id.([]interface{})
+	if !ok {
+		return []interface{}{}, fmt.Errorf("expected [] for key %s got %v", key, id)
+	}
+	return i, nil
+}
+
+func ListToStringList(lst []interface{}) ([]string, error) {
+	s := make([]string, len(lst))
+	ok := true
+	for idx, v := range lst {
+		s[idx], ok = v.(string)
+		if !ok {
+			return []string{}, fmt.Errorf("expected string for idx %d got %v", idx, v)
+		}
+	}
+	return s, nil
+}
+
 func LoadFromFile(file string, data interface{}) error {
 
 	// Ensure directory exists

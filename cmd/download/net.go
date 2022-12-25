@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -28,28 +29,66 @@ func getThrottler(min_delay time.Duration) func() {
 	}
 }
 
-func fetchFromURL(client *http.Client, url string, data interface{}) error {
+func postToURL(client *http.Client, url string, pdata url.Values, data interface{}) error {
 	throttler()
-	resp, err := client.Get(url)
+
+	resp, err := client.PostForm(url, pdata)
 	if err != nil {
-		return fmt.Errorf("url %v: %w", url, err)
+		return fmt.Errorf("post url %v: %w", url, err)
 	}
 	defer resp.Body.Close()
+
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("reading url %v: %w", url, err)
 	}
+
 	if resp.StatusCode == http.StatusForbidden {
-		return fmt.Errorf("url %v: %w", url, forbidden)
+		return fmt.Errorf("post url %v: %w", url, forbidden)
 	}
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("url %v: status %v: %s", url, resp.StatusCode, string(bodyBytes))
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		fmt.Printf("Got bad status code from url %v: %v, %s\n", url, resp.StatusCode, string(bodyBytes))
+		return fmt.Errorf("post url %v: status %v: %s", url, resp.StatusCode, string(bodyBytes))
 	}
+
 	decoder := json.NewDecoder(bytes.NewReader(bodyBytes))
 	decoder.DisallowUnknownFields()
 	if err = decoder.Decode(data); err != nil {
 		return fmt.Errorf("decoding '%v' from url %v: %w", string(bodyBytes), url, err)
 	}
+
+	return nil
+}
+
+func fetchFromURL(client *http.Client, url string, data interface{}) error {
+	throttler()
+
+	resp, err := client.Get(url)
+	if err != nil {
+		return fmt.Errorf("url %v: %w", url, err)
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("reading url %v: %w", url, err)
+	}
+
+	if resp.StatusCode == http.StatusForbidden {
+		return fmt.Errorf("url %v: %w", url, forbidden)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("url %v: status %v: %s", url, resp.StatusCode, string(bodyBytes))
+	}
+
+	decoder := json.NewDecoder(bytes.NewReader(bodyBytes))
+	decoder.DisallowUnknownFields()
+	if err = decoder.Decode(data); err != nil {
+		return fmt.Errorf("decoding '%v' from url %v: %w", string(bodyBytes), url, err)
+	}
+
 	return nil
 }
 

@@ -28,7 +28,7 @@ const (
 )
 
 func (d PriceType) String() string {
-	return [4]string{"OutOfRange", "Inferred", "Exact", "None"}[d]
+	return [5]string{"OutOfRange", "Inferred", "Exact", "Trade", "None"}[d]
 }
 
 type PriceList []Price
@@ -119,29 +119,24 @@ func (p PriceList) GetPrice(date Date) (*big.Rat, PriceType) {
 	return v, PriceTypeInferred
 }
 
-type ccyMap struct {
-	unit string
-	ccy  string
-}
-
 // PriceBookBuilder is used for building a price book
 type priceBookBuilder struct {
-	data map[ccyMap]PriceList
+	data map[PricePair]PriceList
 }
 
 // Create a new PriceBookBuilder
 func newPriceBookBuilder() *priceBookBuilder {
 	return &priceBookBuilder{
-		data: make(map[ccyMap]PriceList),
+		data: make(map[PricePair]PriceList),
 	}
 }
 
 // Add a price for a particular date. Unit is the base currency and val is the rate
 // to convert into ccy. That is <amount in unit> * val = <amount in ccy>.
 func (p *priceBookBuilder) addPrice(date Date, unit string, ccy string, val *big.Rat) {
-	cmap := ccyMap{
-		unit: unit,
-		ccy:  ccy,
+	cmap := PricePair{
+		Unit: unit,
+		CCY:  ccy,
 	}
 	v, ok := p.data[cmap]
 	if !ok {
@@ -156,7 +151,7 @@ func (p *priceBookBuilder) addPrice(date Date, unit string, ccy string, val *big
 // Convert into a PriceBook that can be used for conversions
 func (p *priceBookBuilder) build() *priceBook {
 	pb := &priceBook{
-		data: make(map[ccyMap]PriceList),
+		data: make(map[PricePair]PriceList),
 	}
 	for cmap, plist := range p.data {
 		pl := make(PriceList, len(plist), len(plist))
@@ -174,7 +169,7 @@ func (p *priceBookBuilder) build() *priceBook {
 
 // PriceBook is an efficient structure for price conversions
 type priceBook struct {
-	data map[ccyMap]PriceList
+	data map[PricePair]PriceList
 }
 
 // Get a price for a particular date, unit, and ccy and return the rate.
@@ -188,11 +183,11 @@ func (p *priceBook) getPrice(date Date, unit string, ccy string) (*big.Rat, Pric
 	if unit == ccy {
 		return big.NewRat(1, 1), PriceTypeExact
 	}
-	v, ok := p.data[ccyMap{unit, ccy}]
+	v, ok := p.data[PricePair{unit, ccy}]
 	if ok {
 		return v.GetPrice(date)
 	}
-	v, ok = p.data[ccyMap{ccy, unit}]
+	v, ok = p.data[PricePair{ccy, unit}]
 	if ok {
 		r, pt := v.GetPrice(date)
 		return big.NewRat(0, 1).Inv(r), pt
@@ -201,7 +196,7 @@ func (p *priceBook) getPrice(date Date, unit string, ccy string) (*big.Rat, Pric
 }
 
 func (p *priceBook) getPrices(unit string, ccy string) PriceList {
-	v, ok := p.data[ccyMap{unit, ccy}]
+	v, ok := p.data[PricePair{unit, ccy}]
 	if ok {
 		return v
 	}

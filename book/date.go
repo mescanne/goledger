@@ -155,6 +155,10 @@ func (date Date) DaysSince(d2 Date) int {
 	return date.AsDays() - d2.AsDays()
 }
 
+func (date Date) AddDays(days int) Date {
+	return GetDateFromDays(date.AsDays() + days)
+}
+
 var monthDays = [12]int{31, 28, 31, 30, 31,
 	30, 31, 31, 30, 31, 30, 31}
 

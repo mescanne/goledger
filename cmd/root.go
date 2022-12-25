@@ -6,6 +6,7 @@ import (
 	"github.com/mescanne/goledger/cmd/app"
 	"github.com/mescanne/goledger/cmd/currencies"
 	"github.com/mescanne/goledger/cmd/download"
+	"github.com/mescanne/goledger/cmd/export"
 	"github.com/mescanne/goledger/cmd/generate"
 	"github.com/mescanne/goledger/cmd/importer"
 	"github.com/mescanne/goledger/cmd/register"
@@ -26,6 +27,7 @@ type Config struct {
 	Generate   map[string]*generate.Generate
 	Download   download.Download
 	Web        web.WebConfig
+	Export     export.ExportReport
 }
 
 //
@@ -59,6 +61,7 @@ func Execute() error {
 	importer.Add(appCmd, &app.App, app.ImportDefs)
 	generate.Add(appCmd, &app.App, app.Generate)
 	currencies.Add(appCmd, &app.App)
+	export.Add(appCmd, &app.App, &app.Export)
 	download.Add(appCmd, &app.Download)
 	utils.AddShell(appCmd)
 	utils.AddDocs(appCmd)

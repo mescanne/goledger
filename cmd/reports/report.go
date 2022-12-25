@@ -70,9 +70,9 @@ func Add(cmd *cobra.Command, app *app.App, report *TransactionReport) {
 	cmd.AddCommand(ncmd)
 
 	// Set defaults
-	floorType := utils.NewEnum(&report.Combineby, book.FloorTypes, "floorType")
+	floorType := utils.NewEnum(&report.Combineby, append(book.FloorTypes, "skip"), "floorType")
 	ncmd.Flags().Var(floorType, "splitby", fmt.Sprintf("combine transactions by periodic date (values %s)", floorType.Values()))
-	reportType := utils.NewEnum(&report.Type, []string{"Text", "Ledger", "Json", "HTML"}, "reportType")
+	reportType := utils.NewEnum(&report.Type, []string{"Text", "Ledger", "Json", "HTML", "Beancount"}, "reportType")
 	ncmd.Flags().Var(reportType, "type", fmt.Sprintf("report type (%s)", reportType.Values()))
 	ncmd.Flags().BoolVar(&report.Sum, "sum", report.Sum, "summarise transactions")
 	ncmd.Flags().BoolVar(&report.Convert, "convert", report.Convert, "convert to base currency")
@@ -107,9 +107,11 @@ func (report *TransactionReport) run(app *app.App, cmd *cobra.Command, args []st
 	}
 
 	// Always combine for reports
-	b.SplitBy(report.Combineby)
+	if report.Type != "Beancount" && report.Combineby != "skip" {
+		b.SplitBy(report.Combineby)
+	}
 
-	if report.Convert {
+	if report.Type != "Beancount" && report.Convert {
 		if app.BaseCCY == "" {
 			return fmt.Errorf("unable to convert -- no CCY specified")
 		}
@@ -120,7 +122,7 @@ func (report *TransactionReport) run(app *app.App, cmd *cobra.Command, args []st
 	}
 
 	var creditre *regexp.Regexp = nil
-	if report.Credit != "" {
+	if report.Type != "Beancount" && report.Credit != "" {
 		creditre, err = regexp.Compile(report.Credit)
 		if err != nil {
 			return fmt.Errorf("failed compiling credit accounts '%s': %w", report.Credit, err)
@@ -128,7 +130,7 @@ func (report *TransactionReport) run(app *app.App, cmd *cobra.Command, args []st
 	}
 
 	var trans []book.Transaction
-	if report.Sum {
+	if report.Type != "Beancount" && report.Sum {
 		if app.BaseCCY == "" {
 			return fmt.Errorf("unable to convert -- no CCY specified")
 		}
@@ -146,6 +148,8 @@ func (report *TransactionReport) run(app *app.App, cmd *cobra.Command, args []st
 		return bp.PrintJSON(trans, report.JsonPretty)
 	} else if report.Type == "HTML" {
 		return ShowHTMLTransactions(bp, trans, report.HTMLCSS)
+	} else if report.Type == "Beancount" {
+		return ShowBeancount(bp, trans)
 	} else {
 		return ShowLedger(bp, trans)
 	}

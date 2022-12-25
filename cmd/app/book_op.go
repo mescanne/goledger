@@ -79,6 +79,7 @@ Operations:
 var re_op_prefix = regexp.MustCompile("^[A-Za-z][0-9A-Za-z_]*=")
 
 // Regexp for map and move
+var mapccy_op = regexp.MustCompile("^/([^/]+)/([^/]+)/$")
 var map_op = regexp.MustCompile("^/([^/]+)/([^/]+)/(([^/]+)/)?$")
 var move_op = regexp.MustCompile("^/([^/]+)/([^/]+)/([0-9\\.]+)/$")
 var deprec_op = regexp.MustCompile("^/([^/]+)/([^/]+)/([0-9\\.]+)/$")
@@ -115,6 +116,13 @@ func (app *App) bookOp(b *book.Book, op string) error {
 	op_act := op[len(op_type):]
 
 	switch op_type {
+	case "mapccy=":
+		args := mapccy_op.FindStringSubmatch(op_act)
+		if args == nil {
+			return fmt.Errorf("mapccy operation '%s', invalid: must be format '%s'", op_act, map_op.String())
+		}
+		b.RegexCCY(args[1], args[2])
+		return nil
 	case "map=":
 		args := map_op.FindStringSubmatch(op_act)
 		if args == nil {

@@ -269,7 +269,7 @@ func (b *BookPrinter) FormatNumber(symbol string, amount *big.Rat) string {
 
 // Formal the symbol (CCY) for printing
 func (b *BookPrinter) FormatSymbol(symbol string) string {
-	if sym := []rune(symbol); unicode.IsLetter(sym[len(sym)-1]) {
+	if sym := []rune(symbol); unicode.IsLetter(sym[len(sym)-1]) || sym[len(sym)-1] == '"' {
 		return symbol + " "
 	}
 	return symbol

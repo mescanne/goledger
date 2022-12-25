@@ -1,6 +1,7 @@
 package book
 
 import (
+	"encoding/json"
 	"math/big"
 	"regexp"
 	"strings"
@@ -17,6 +18,8 @@ type RegistryEntry struct {
 	Amount         *big.Rat `json:"amount"`
 	CCY            string   `json:"ccy"`
 	Balance        *big.Rat `json:"balance"` // Balance for CCY across all extract accounts
+	Note           string   `json:"note"`    // Note for posting
+	TNote          string   `json:"tnote"`   // Transaction note
 
 	// Conversions to base
 	BaseCCY     string    // BaseCCY (always the same)
@@ -141,14 +144,60 @@ func (b *Book) ExtractRegister(baseccy string, re *regexp.Regexp, split bool) Re
 					CounterAccount: v,
 					Amount:         camts[i],
 					CCY:            p.GetCCY(),
+					Note:           p.GetPostNote(),
+					TNote:          p.GetTransactionNote(),
 					Balance:        big.NewRat(0, 1).Set(bal),
 					BaseCCY:        baseccy,
 					BaseAmount:     baseAmt,
 					BaseSource:     baseSource,
+					BaseBalance:    big.NewRat(0, 1).Set(baseBal),
 				})
 			}
 		}
 	}
 
 	return data
+}
+
+func (re RegistryEntry) MarshalJSON() ([]byte, error) {
+
+	type JsonRegistryEntry struct {
+		Date           Date    `json:"date"`
+		Account        string  `json:"account"`
+		Payee          string  `json:"payee,omitempty"`
+		CounterAccount string  `json:"counterAccount,omitempty"` // May be a single or semi-colon-delimited list
+		Amount         float64 `json:"amount"`
+		CCY            string  `json:"ccy"`
+		Balance        float64 `json:"balance"` // Balance for CCY across all extract accounts
+		Note           string  `json:"note"`    // Note for posting
+		TNote          string  `json:"tnote"`   // Transaction note
+
+		// Conversions to base
+		BaseCCY     string  // BaseCCY (always the same)
+		BaseAmount  float64 // Amount in BaseCCY
+		BaseSource  string  // Source of price for conversion
+		BaseBalance float64 // Total balance to date across all CCYs converted to BaseCCY (recalculated each time)
+	}
+
+	amt, _ := re.Amount.Float64()
+	bal, _ := re.Balance.Float64()
+	baseAmt, _ := re.BaseAmount.Float64()
+	baseBal, _ := re.BaseBalance.Float64()
+
+	return json.Marshal(&JsonRegistryEntry{
+		Date:           re.Date,
+		Account:        re.Account,
+		Payee:          re.Payee,
+		CounterAccount: re.CounterAccount,
+		Amount:         amt,
+		CCY:            re.CCY,
+		Balance:        bal,
+		Note:           re.Note,
+		TNote:          re.TNote,
+
+		BaseCCY:     re.BaseCCY,
+		BaseAmount:  baseAmt,
+		BaseSource:  re.BaseSource.String(),
+		BaseBalance: baseBal,
+	})
 }

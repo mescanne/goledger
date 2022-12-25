@@ -136,7 +136,7 @@ func (app *App) LoadCommand() *cobra.Command {
 		BashCompletionFunction: custom_func,
 		Version:                version,
 		DisableAutoGenTag:      true,
-		SilenceUsage:           true,
+		SilenceUsage:           false,
 		SilenceErrors:          true,
 
 		// Prior to the RunE method running, suppress any usage output

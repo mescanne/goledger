@@ -3,6 +3,7 @@ package reports
 import (
 	"github.com/mescanne/goledger/book"
 	"github.com/mescanne/goledger/cmd/app"
+	"github.com/mescanne/goledger/loader"
 )
 
 func ShowLedger(b *app.BookPrinter, trans []book.Transaction) error {
@@ -17,7 +18,19 @@ func ShowLedger(b *app.BookPrinter, trans []book.Transaction) error {
 			if pnote != "" {
 				pnote = "  ; " + pnote
 			}
-			b.Printf("  %s  %s%s%s\n", p.GetAccount(), b.FormatSymbol(p.GetCCY()), b.FormatNumber(p.GetCCY(), p.GetAmount()), pnote)
+
+			ccy := p.GetCCY()
+			needsQuotes := false
+			for _, c := range ccy {
+				if !loader.IsCCYRune(rune(c)) {
+					needsQuotes = true
+				}
+			}
+			if needsQuotes {
+				ccy = "\"" + ccy + "\""
+			}
+
+			b.Printf("  %s  %s%s%s\n", p.GetAccount(), b.FormatSymbol(ccy), b.FormatNumber(p.GetCCY(), p.GetAmount()), pnote)
 		}
 		b.Printf("\n")
 	}

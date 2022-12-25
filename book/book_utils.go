@@ -1,6 +1,7 @@
 package book
 
 import (
+	"math/big"
 	"regexp"
 )
 
@@ -23,6 +24,36 @@ func (b *Book) RegexAccounts(search string, replace string, alt string) {
 		}
 		return acct
 	})
+}
+
+func (b *Book) RegexCCY(search string, replace string) {
+	one := big.NewRat(1, 1)
+	re := regexp.MustCompile(search)
+
+	// Map all the postings
+	b.MapAmount(func(date Date, ccy string) (*big.Rat, string) {
+		if re.MatchString(ccy) {
+			return one, re.ReplaceAllString(ccy, replace)
+		} else {
+			return one, ccy
+		}
+	})
+
+	// Map the prices
+	for ccypair, pl := range b.prices.data {
+		newpair := ccypair
+		if re.MatchString(ccypair.Unit) {
+			newpair.Unit = re.ReplaceAllString(ccypair.Unit, replace)
+		}
+		if re.MatchString(ccypair.CCY) {
+			newpair.CCY = re.ReplaceAllString(ccypair.CCY, replace)
+		}
+		if newpair.Unit == ccypair.Unit && newpair.CCY == ccypair.CCY {
+			continue
+		}
+		b.prices.data[newpair] = pl
+		delete(b.prices.data, ccypair)
+	}
 }
 
 func (b *Book) FilterByDateSince(minDate Date) {
