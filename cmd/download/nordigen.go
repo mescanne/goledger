@@ -327,7 +327,7 @@ func (m *NordigenClient) Sync() error {
 
 func (c *NordigenClient) ListInstitutions(country string) ([]Institution, error) {
 	resp := make([]Institution, 0)
-	if err := fetchFromURL(c.client, fmt.Sprintf("%s/institutions?payments_enabled=false&country=%s", NORDIGEN_ENDPOINT, country), &resp); err != nil {
+	if err := fetchFromURL(c.client, fmt.Sprintf("%s/institutions?payments_enabled=true&country=%s", NORDIGEN_ENDPOINT, country), &resp); err != nil {
 		return nil, fmt.Errorf("failed list institutions: %w", err)
 	}
 
