@@ -27,7 +27,7 @@ func Add(cmd *cobra.Command, app *app.App, export *ExportReport) {
 	cmd.AddCommand(ncmd)
 
 	// Set defaults
-	exportType := utils.NewEnum(&export.Type, []string{"Ledger", "Json", "Beancount"}, "exportType")
+	exportType := utils.NewEnum(&export.Type, []string{"Ledger", "Json", "Beancount", "CSV"}, "exportType")
 	ncmd.Flags().Var(exportType, "type", fmt.Sprintf("export type (%s)", exportType.Values()))
 	ncmd.Flags().BoolVar(&export.JsonPretty, "jsonpretty", export.JsonPretty, "pretty Json (indented) for Json output")
 
@@ -63,7 +63,10 @@ func (export *ExportReport) run(app *app.App, cmd *cobra.Command, args []string)
 		return bp.PrintJSON(b.Transactions(), export.JsonPretty)
 	} else if export.Type == "Beancount" {
 		return ShowBeancount(bp, b, app.BaseCCY)
+	} else if export.Type == "CSV" {
+		return ShowCSV(bp, b)
 	} else {
 		return ShowLedger(bp, b)
 	}
 }
+
