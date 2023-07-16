@@ -1,0 +1,2 @@
+
+/* example load.js */

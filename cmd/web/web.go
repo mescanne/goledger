@@ -3,14 +3,15 @@ package web
 import (
 	"embed"
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/mescanne/goledger/cmd/accounts"
 	"github.com/mescanne/goledger/cmd/app"
 	"github.com/mescanne/goledger/cmd/currencies"
 	"github.com/mescanne/goledger/cmd/register"
 	"github.com/mescanne/goledger/cmd/reports"
 	"github.com/spf13/cobra"
-	"io"
-	"net/http"
 )
 
 type WebConfig struct {

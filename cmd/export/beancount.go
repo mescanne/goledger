@@ -1,10 +1,11 @@
 package export
 
 import (
-	"github.com/mescanne/goledger/book"
-	"github.com/mescanne/goledger/cmd/app"
 	"math/big"
 	"strings"
+
+	"github.com/mescanne/goledger/book"
+	"github.com/mescanne/goledger/cmd/app"
 )
 
 func FormatCurrency(ccy string) string {
@@ -88,7 +89,7 @@ func ShowBeancount(b *app.BookPrinter, bk *book.Book, baseCCY string) error {
 		unit := FormatCurrency(pair.Unit)
 		ccy := FormatCurrency(pair.CCY)
 		for _, p := range pl {
-			b.Printf("P %s 00:00:00 %s %s %s\n", p.GetDate(), unit, b.FormatNumber(pair.CCY, p.GetPrice()), ccy)
+			b.Printf("%s price %s  %s %s\n", p.GetDate(), unit, b.FormatNumber(pair.CCY, p.GetPrice()), ccy)
 		}
 	}
 
